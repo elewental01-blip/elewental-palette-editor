@@ -1,43 +1,214 @@
-import { useState } from "react";
 import { useEditor } from "@/lib/context";
 import { BorderItem, BorderDirection } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { Plus, X, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import borderSpriteUrl from "@assets/image_1781267538292.png";
 
-// Maps each direction to its (col, row) position in the 5x5 sprite image.
-// The image is a 5-column × 5-row grid of tile sprites.
-// background-size: 500% 500%  →  position = (col/4 * 100%)  (row/4 * 100%)
-const SPRITE_POSITIONS: Record<BorderDirection, string> = {
-  cse: "0% 0%",
-  csw: "100% 0%",
-  dse: "0% 25%",
-  n:   "50% 25%",
-  dsw: "100% 25%",
-  e:   "25% 50%",
-  w:   "75% 50%",
-  dne: "0% 75%",
-  s:   "50% 75%",
-  dnw: "100% 75%",
-  cne: "0% 100%",
-  cnw: "100% 100%",
-};
+// ── SVG border direction icons ────────────────────────────────────────────────
+// Each 24×24 icon shows a small tile diagram:
+//   ground = muted fill, accent = where the border tile sits
 
-const DIRECTION_LABELS: Record<BorderDirection, string> = {
-  n: "N", s: "S", e: "E", w: "W",
-  cnw: "CNW", cne: "CNE", csw: "CSW", cse: "CSE",
-  dnw: "DNW", dne: "DNE", dsw: "DSW", dse: "DSE",
-};
+function BorderIcon({ dir }: { dir: BorderDirection }) {
+  const g = "hsl(215 20% 30%)"; // ground
+  const a = "hsl(45 90% 55%)";  // accent (border tile)
+
+  const icons: Record<BorderDirection, JSX.Element> = {
+    // Cardinal edges — full bar on one side
+    n: (
+      <>
+        <rect width="24" height="7" fill={a} />
+        <rect y="7" width="24" height="17" fill={g} />
+      </>
+    ),
+    s: (
+      <>
+        <rect width="24" height="17" fill={g} />
+        <rect y="17" width="24" height="7" fill={a} />
+      </>
+    ),
+    e: (
+      <>
+        <rect width="17" height="24" fill={g} />
+        <rect x="17" width="7" height="24" fill={a} />
+      </>
+    ),
+    w: (
+      <>
+        <rect width="7" height="24" fill={a} />
+        <rect x="7" width="17" height="24" fill={g} />
+      </>
+    ),
+
+    // Concave (inner) corners — square block in corner
+    cnw: (
+      <>
+        <rect width="24" height="24" fill={g} />
+        <rect x="17" y="17" width="7" height="7" fill={a} />
+        {/* Inner corner mark: small L at bottom-right */}
+        <rect x="17" y="0" width="7" height="1" fill={a} opacity="0.3" />
+        <rect x="0" y="17" width="1" height="7" fill={a} opacity="0.3" />
+      </>
+    ),
+    cne: (
+      <>
+        <rect width="24" height="24" fill={g} />
+        <rect x="0" y="17" width="7" height="7" fill={a} />
+      </>
+    ),
+    csw: (
+      <>
+        <rect width="24" height="24" fill={g} />
+        <rect x="17" y="0" width="7" height="7" fill={a} />
+      </>
+    ),
+    cse: (
+      <>
+        <rect width="24" height="24" fill={g} />
+        <rect x="0" y="0" width="7" height="7" fill={a} />
+      </>
+    ),
+
+    // Diagonal (outer/convex) corners — triangle in corner
+    dnw: (
+      <>
+        <rect width="24" height="24" fill={g} />
+        <polygon points="24,24 24,10 10,24" fill={a} />
+      </>
+    ),
+    dne: (
+      <>
+        <rect width="24" height="24" fill={g} />
+        <polygon points="0,24 0,10 14,24" fill={a} />
+      </>
+    ),
+    dsw: (
+      <>
+        <rect width="24" height="24" fill={g} />
+        <polygon points="24,0 24,14 10,0" fill={a} />
+      </>
+    ),
+    dse: (
+      <>
+        <rect width="24" height="24" fill={g} />
+        <polygon points="0,0 0,14 14,0" fill={a} />
+      </>
+    ),
+  };
+
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={28}
+      height={28}
+      style={{ display: "block", borderRadius: 3, overflow: "hidden" }}
+    >
+      {icons[dir]}
+    </svg>
+  );
+}
+
+// ── Cell component (self-contained) ──────────────────────────────────────────
+
+function DirectionCell({
+  dir,
+  label,
+  items,
+  onUpdate,
+}: {
+  dir: BorderDirection;
+  label: string;
+  items: number[];
+  onUpdate: (ids: number[]) => void;
+}) {
+  const hasItems = items.length > 0;
+
+  const addId = (raw: string) => {
+    const val = parseInt(raw);
+    if (val && !isNaN(val)) onUpdate([...items, val]);
+  };
+
+  return (
+    <div
+      className={[
+        "flex flex-col rounded-lg border overflow-hidden transition-colors",
+        hasItems
+          ? "border-primary/50 bg-card"
+          : "border-border/40 bg-card/60",
+      ].join(" ")}
+      data-testid={`border-cell-${dir}`}
+    >
+      {/* Header */}
+      <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/30 bg-muted/30">
+        <BorderIcon dir={dir} />
+        <span className="text-xs font-mono font-bold text-foreground/80 uppercase tracking-wide">
+          {label}
+        </span>
+        {hasItems && (
+          <span className="ml-auto text-[10px] text-primary/80 font-mono">
+            ×{items.length}
+          </span>
+        )}
+      </div>
+
+      {/* ID badges */}
+      <div className="px-2 pt-1.5 flex flex-wrap gap-1 min-h-[24px]">
+        {items.map((item, idx) => (
+          <Badge
+            key={`${dir}-${idx}`}
+            variant="secondary"
+            className="px-1 py-0 h-5 text-[10px] gap-0.5 pr-0.5"
+          >
+            {item}
+            <button
+              type="button"
+              onClick={() => onUpdate(items.filter((_, i) => i !== idx))}
+              className="hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5 transition-colors"
+              data-testid={`button-remove-${dir}-${idx}`}
+            >
+              <X className="w-2 h-2" />
+            </button>
+          </Badge>
+        ))}
+      </div>
+
+      {/* Inline add input */}
+      <form
+        className="flex items-center gap-0 px-2 pb-2 pt-1 mt-auto"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const inp = (e.target as HTMLFormElement).elements.namedItem("val") as HTMLInputElement;
+          addId(inp.value);
+          inp.value = "";
+        }}
+      >
+        <Input
+          name="val"
+          type="number"
+          placeholder="ID..."
+          className="h-6 text-[11px] px-1.5 rounded-r-none border-r-0 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
+          data-testid={`input-direction-${dir}`}
+        />
+        <Button
+          type="submit"
+          size="icon"
+          className="h-6 w-6 rounded-l-none shrink-0"
+          data-testid={`button-add-${dir}`}
+        >
+          <Plus className="w-3 h-3" />
+        </Button>
+      </form>
+    </div>
+  );
+}
+
+// ── Main Border Editor ────────────────────────────────────────────────────────
 
 export function BorderEditor() {
   const { state, dispatch } = useEditor();
   const activeItem = state.borders.find((b) => b.id === state.activeItemId);
-  const [activeDir, setActiveDir] = useState<BorderDirection | null>(null);
 
   if (!activeItem) {
     return (
@@ -63,17 +234,24 @@ export function BorderEditor() {
     });
   };
 
-  // 5×5 layout — matches RME reference image
-  const layout: (BorderDirection | "empty" | "ctr")[] = [
-    "cse",   "empty", "n",     "empty", "csw",
-    "dse",   "empty", "empty", "empty", "dsw",
-    "empty", "e",     "ctr",   "w",     "empty",
-    "dne",   "empty", "empty", "empty", "dnw",
-    "cne",   "empty", "s",     "empty", "cnw",
+  // 5×5 grid layout matching RME visual
+  // Each entry: [key, label] | null (empty spacer) | "ctr" (center tile)
+  type CellDef =
+    | { type: "dir"; dir: BorderDirection; label: string }
+    | { type: "empty" }
+    | { type: "ctr" };
+
+  const layout: CellDef[] = [
+    { type: "dir", dir: "cse", label: "CSE" }, { type: "empty" }, { type: "dir", dir: "n",   label: "N"   }, { type: "empty" }, { type: "dir", dir: "csw", label: "CSW" },
+    { type: "dir", dir: "dse", label: "DSE" }, { type: "empty" }, { type: "empty" },                          { type: "empty" }, { type: "dir", dir: "dsw", label: "DSW" },
+    { type: "empty" },                          { type: "dir", dir: "e",   label: "E"   }, { type: "ctr" }, { type: "dir", dir: "w",   label: "W"   }, { type: "empty" },
+    { type: "dir", dir: "dne", label: "DNE" }, { type: "empty" }, { type: "empty" },                          { type: "empty" }, { type: "dir", dir: "dnw", label: "DNW" },
+    { type: "dir", dir: "cne", label: "CNE" }, { type: "empty" }, { type: "dir", dir: "s",   label: "S"   }, { type: "empty" }, { type: "dir", dir: "cnw", label: "CNW" },
   ];
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-200">
+      {/* Meta fields */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Border Configuration</h2>
 
@@ -118,192 +296,83 @@ export function BorderEditor() {
         </div>
       </div>
 
+      {/* Visual grid */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Visual Grid</h2>
+          <div>
+            <h2 className="text-xl font-bold">Direction Grid</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Each cell shows where that border tile sits. Type an ID and press Enter or click +.
+            </p>
+          </div>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              setActiveDir(null);
+            onClick={() =>
               updateField("items", {
                 n: [], s: [], e: [], w: [],
                 cnw: [], cne: [], csw: [], cse: [],
                 dnw: [], dne: [], dsw: [], dse: [],
-              });
-            }}
+              })
+            }
             data-testid="button-clear-border-items"
           >
             Clear All
           </Button>
         </div>
 
-        <div className="bg-sidebar rounded-xl border border-sidebar-border p-6">
-          <div className="grid grid-cols-5 gap-3 max-w-3xl mx-auto">
+        <div className="bg-sidebar rounded-xl border border-sidebar-border p-5">
+          <div className="grid grid-cols-5 gap-2 max-w-3xl mx-auto">
             {layout.map((cell, i) => {
-              if (cell === "empty") {
-                return <div key={`empty-${i}`} className="h-28 pointer-events-none" />;
+              if (cell.type === "empty") {
+                return <div key={`e-${i}`} className="pointer-events-none" />;
               }
 
-              if (cell === "ctr") {
+              if (cell.type === "ctr") {
                 return (
                   <div
                     key="ctr"
-                    className="h-28 rounded-lg overflow-hidden border border-border/40 flex items-center justify-center pointer-events-none"
-                    style={{
-                      backgroundImage: `url(${borderSpriteUrl})`,
-                      backgroundSize: "500% 500%",
-                      backgroundPosition: "50% 50%",
-                      backgroundRepeat: "no-repeat",
-                      opacity: 0.55,
-                    }}
-                  />
+                    className="rounded-lg border border-border/30 bg-muted/20 flex items-center justify-center min-h-[100px]"
+                  >
+                    {/* Center tile — ground reference */}
+                    <svg viewBox="0 0 32 32" width={36} height={36} style={{ borderRadius: 4, overflow: "hidden" }}>
+                      <rect width="32" height="32" fill="hsl(215 20% 30%)" />
+                      {/* Subtle grid lines */}
+                      <line x1="0" y1="16" x2="32" y2="16" stroke="hsl(215 20% 40%)" strokeWidth="0.5" />
+                      <line x1="16" y1="0" x2="16" y2="32" stroke="hsl(215 20% 40%)" strokeWidth="0.5" />
+                    </svg>
+                  </div>
                 );
               }
 
-              const dir = cell as BorderDirection;
-              const items = activeItem.items[dir] || [];
-              const isActive = activeDir === dir;
-              const hasItems = items.length > 0;
-
               return (
-                <div
-                  key={dir}
-                  data-testid={`border-cell-${dir}`}
-                  onClick={() => setActiveDir(isActive ? null : dir)}
-                  className={[
-                    "h-28 rounded-lg overflow-hidden border cursor-pointer transition-all relative flex flex-col",
-                    isActive
-                      ? "border-primary ring-2 ring-primary/40"
-                      : hasItems
-                        ? "border-primary/50 hover:border-primary/70"
-                        : "border-border/50 hover:border-border",
-                  ].join(" ")}
-                >
-                  {/* Sprite background */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      backgroundImage: `url(${borderSpriteUrl})`,
-                      backgroundSize: "500% 500%",
-                      backgroundPosition: SPRITE_POSITIONS[dir],
-                      backgroundRepeat: "no-repeat",
-                      opacity: 0.35,
-                    }}
-                  />
-
-                  {/* Direction label */}
-                  <div
-                    className={[
-                      "relative z-10 px-2 py-1 text-[11px] font-mono font-bold border-b",
-                      isActive
-                        ? "bg-primary/80 text-primary-foreground border-primary/50"
-                        : "bg-card/70 text-muted-foreground border-border/40 backdrop-blur-sm",
-                    ].join(" ")}
-                  >
-                    {DIRECTION_LABELS[dir]}
-                    {hasItems && (
-                      <span className="ml-1 text-primary text-[9px]">
-                        ({items.length})
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Item badges */}
-                  <div className="relative z-10 p-1.5 flex flex-wrap gap-1 flex-1 content-start overflow-hidden">
-                    {items.map((item, idx) => (
-                      <Badge
-                        key={`${dir}-${idx}`}
-                        variant="secondary"
-                        className="px-1 py-0 h-4 text-[9px] gap-0.5 pr-0.5 bg-card/90"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {item}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            updateDirection(dir, items.filter((_, i) => i !== idx));
-                          }}
-                          className="hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5 transition-colors"
-                        >
-                          <X className="w-2 h-2" />
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
+                <DirectionCell
+                  key={cell.dir}
+                  dir={cell.dir}
+                  label={cell.label}
+                  items={activeItem.items[cell.dir] || []}
+                  onUpdate={(ids) => updateDirection(cell.dir, ids)}
+                />
               );
             })}
           </div>
-        </div>
 
-        {/* Inline editor panel for selected direction */}
-        {activeDir && (
-          <div className="mt-4 border border-primary/30 rounded-lg p-4 bg-card animate-in slide-in-from-top-2 duration-150">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="font-mono font-bold text-primary text-sm">
-                {DIRECTION_LABELS[activeDir]}
-              </div>
-              <div
-                className="w-8 h-8 rounded border border-border"
-                style={{
-                  backgroundImage: `url(${borderSpriteUrl})`,
-                  backgroundSize: "500% 500%",
-                  backgroundPosition: SPRITE_POSITIONS[activeDir],
-                  backgroundRepeat: "no-repeat",
-                }}
-              />
-              <span className="text-xs text-muted-foreground">
-                Add item IDs for this border direction
-              </span>
+          {/* Legend */}
+          <div className="mt-5 flex items-center gap-6 justify-center text-[11px] text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="4" fill="hsl(45 90% 55%)" /><rect y="4" width="14" height="10" fill="hsl(215 20% 30%)" /></svg>
+              Edge (N/S/E/W)
             </div>
-            <form
-              className="flex items-center gap-2"
-              onSubmit={(e) => {
-                e.preventDefault();
-                const input = (e.target as HTMLFormElement).elements.namedItem("val") as HTMLInputElement;
-                const val = parseInt(input.value);
-                if (val && !isNaN(val)) {
-                  const items = activeItem.items[activeDir] || [];
-                  updateDirection(activeDir, [...items, val]);
-                  input.value = "";
-                }
-              }}
-            >
-              <Input
-                name="val"
-                type="number"
-                placeholder="Enter item ID and press Enter..."
-                className="h-8 text-sm max-w-xs"
-                autoFocus
-                data-testid={`input-direction-${activeDir}`}
-              />
-              <Button type="submit" size="sm" className="h-8" data-testid={`button-add-${activeDir}`}>
-                <Plus className="w-3 h-3 mr-1" />
-                Add
-              </Button>
-            </form>
-            {(activeItem.items[activeDir] || []).length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {(activeItem.items[activeDir] || []).map((item, idx) => (
-                  <Badge key={idx} variant="outline" className="px-2 py-0.5 text-xs gap-1.5">
-                    {item}
-                    <button
-                      onClick={() => {
-                        const items = activeItem.items[activeDir] || [];
-                        updateDirection(activeDir, items.filter((_, i) => i !== idx));
-                      }}
-                      className="hover:text-destructive transition-colors"
-                      data-testid={`button-remove-${activeDir}-${idx}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            )}
+            <div className="flex items-center gap-1.5">
+              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="14" fill="hsl(215 20% 30%)" /><rect x="9" y="9" width="5" height="5" fill="hsl(45 90% 55%)" /></svg>
+              Concave corner (C)
+            </div>
+            <div className="flex items-center gap-1.5">
+              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="14" fill="hsl(215 20% 30%)" /><polygon points="14,14 14,6 6,14" fill="hsl(45 90% 55%)" /></svg>
+              Diagonal corner (D)
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
