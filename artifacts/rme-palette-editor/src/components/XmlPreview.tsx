@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useEditor } from "@/lib/context";
-import { generateBordersXml, generateGroundsXml, generateDoodadsXml, generateWallsXml } from "@/lib/xml-generators";
+import {
+  generateBordersXml, generateGroundsXml,
+  generateDoodadsXml, generateWallsXml, generateCarpetsXml,
+} from "@/lib/xml-generators";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Copy, Download, CodeXml } from "lucide-react";
@@ -10,52 +13,37 @@ export function XmlPreview() {
   const { state } = useEditor();
   const { toast } = useToast();
   const [xmlContent, setXmlContent] = useState("");
-  
+
   useEffect(() => {
     let xml = "";
-    if (state.activeCategory === "borders") {
-      xml = generateBordersXml(state.borders);
-    } else if (state.activeCategory === "grounds") {
-      xml = generateGroundsXml(state.grounds);
-    } else if (state.activeCategory === "doodads") {
-      xml = generateDoodadsXml(state.doodads);
-    } else if (state.activeCategory === "walls") {
-      xml = generateWallsXml(state.walls);
-    }
+    if      (state.activeCategory === "borders") xml = generateBordersXml(state.borders);
+    else if (state.activeCategory === "grounds") xml = generateGroundsXml(state.grounds);
+    else if (state.activeCategory === "doodads") xml = generateDoodadsXml(state.doodads);
+    else if (state.activeCategory === "carpets") xml = generateCarpetsXml(state.carpets);
+    else if (state.activeCategory === "walls")   xml = generateWallsXml(state.walls);
     setXmlContent(xml);
   }, [state]);
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(xmlContent);
-      toast({
-        title: "Copied to clipboard",
-        description: "The XML output has been copied.",
-      });
-    } catch (err) {
-      toast({
-        title: "Failed to copy",
-        description: "An error occurred while copying to clipboard.",
-        variant: "destructive",
-      });
+      toast({ title: "Copied to clipboard", description: "The XML output has been copied." });
+    } catch {
+      toast({ title: "Failed to copy", description: "An error occurred.", variant: "destructive" });
     }
   };
 
   const handleDownload = () => {
     const blob = new Blob([xmlContent], { type: "application/xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
     a.href = url;
     a.download = `${state.activeCategory}.xml`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
-    toast({
-      title: "Downloaded",
-      description: `File saved as ${state.activeCategory}.xml`,
-    });
+    toast({ title: "Downloaded", description: `File saved as ${state.activeCategory}.xml` });
   };
 
   return (
@@ -76,7 +64,7 @@ export function XmlPreview() {
       </div>
       <ScrollArea className="flex-1 p-4 bg-[#0d0f15]">
         <pre className="font-mono text-xs text-blue-300 whitespace-pre-wrap break-all">
-          {xmlContent}
+          {xmlContent || <span className="text-muted-foreground/40 italic">— empty —</span>}
         </pre>
       </ScrollArea>
     </div>

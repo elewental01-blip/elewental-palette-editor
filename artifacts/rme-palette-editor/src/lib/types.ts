@@ -33,6 +33,29 @@ export interface DoodadItem {
   elements: DoodadElementType[];
 }
 
+// ── Carpet types ──────────────────────────────────────────────────────────────
+
+export type CarpetAlignDirection =
+  | "n" | "s" | "e" | "w"
+  | "cnw" | "cne" | "csw" | "cse"
+  | "dnw" | "dne" | "dsw" | "dse"
+  | "center";
+
+// Single item → <carpet align="..." id="..."/>
+// Multi items → <carpet align="..."><item chance="..." id="..."/>...</carpet>
+export type CarpetAlignData =
+  | { type: "single"; id: number }
+  | { type: "multi"; items: { id: number; chance: number }[] };
+
+export interface CarpetItem {
+  id: string;
+  name: string;
+  serverLookId?: number;
+  carpets: Partial<Record<CarpetAlignDirection, CarpetAlignData>>;
+}
+
+// ── Wall types ────────────────────────────────────────────────────────────────
+
 export interface WallDoor {
   id: number;
   type: "normal" | "locked" | "quest" | "magic" | "archway" | "normal_alt" | "hatch_window" | "window";
@@ -66,5 +89,6 @@ export interface EditorState {
   borders: BorderItem[];
   grounds: GroundItem[];
   doodads: DoodadItem[];
+  carpets: CarpetItem[];
   walls: WallItem[];
 }

@@ -4,13 +4,16 @@ import { BorderEditor } from "@/components/editors/BorderEditor";
 import { GroundEditor } from "@/components/editors/GroundEditor";
 import { DoodadEditor } from "@/components/editors/DoodadEditor";
 import { WallEditor } from "@/components/editors/WallEditor";
+import { CarpetEditor } from "@/components/editors/CarpetEditor";
 import { XmlPreview } from "@/components/XmlPreview";
 import {
-  Layers, Image as ImageIcon, Box, BrickWall,
+  Layers, Image as ImageIcon, Box, BrickWall, SquareStack,
   Plus, Trash2, ChevronLeft, ChevronRight, Moon, Sun,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
+
+type Category = "borders" | "grounds" | "doodads" | "carpets" | "walls";
 
 export default function Home() {
   const { state, dispatch } = useEditor();
@@ -22,7 +25,6 @@ export default function Home() {
     return false;
   });
 
-  // Apply / remove .dark class on <html> whenever darkMode changes
   useEffect(() => {
     const root = document.documentElement;
     if (darkMode) {
@@ -34,12 +36,13 @@ export default function Home() {
     }
   }, [darkMode]);
 
-  const categories = [
+  const categories: { id: Category; label: string; icon: any }[] = [
     { id: "borders", label: "Borders", icon: Box },
     { id: "grounds", label: "Grounds", icon: Layers },
     { id: "walls",   label: "Walls",   icon: BrickWall },
+    { id: "carpets", label: "Carpets", icon: SquareStack },
     { id: "doodads", label: "Doodads", icon: ImageIcon },
-  ] as const;
+  ];
 
   const currentItems = state[state.activeCategory];
 
@@ -61,6 +64,9 @@ export default function Home() {
       case "doodads":
         dispatch({ type: "ADD_DOODAD", doodad: { id, name: "New Doodad", draggable: true, onBlocking: false, thickness: "10/100", elements: [] } });
         break;
+      case "carpets":
+        dispatch({ type: "ADD_CARPET", carpet: { id, name: "New Carpet", carpets: {} } });
+        break;
       case "walls":
         dispatch({ type: "ADD_WALL", wall: { id, name: "New Wall", walls: {} } });
         break;
@@ -73,6 +79,7 @@ export default function Home() {
       case "borders": dispatch({ type: "DELETE_BORDER", id }); break;
       case "grounds": dispatch({ type: "DELETE_GROUND", id }); break;
       case "doodads": dispatch({ type: "DELETE_DOODAD", id }); break;
+      case "carpets": dispatch({ type: "DELETE_CARPET", id }); break;
       case "walls":   dispatch({ type: "DELETE_WALL",   id }); break;
     }
   };
@@ -84,16 +91,14 @@ export default function Home() {
     <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground">
       {/* ── Header ── */}
       <header className="h-14 border-b border-border bg-card flex items-center px-4 shrink-0 gap-3">
-        {/* Logo */}
-        <div className="flex items-center gap-2 mr-6">
-          <div className="w-8 h-8 rounded bg-primary text-primary-foreground flex items-center justify-center font-bold font-mono text-xs">
+        <div className="flex items-center gap-2 mr-4">
+          <div className="w-8 h-8 rounded bg-primary text-primary-foreground flex items-center justify-center font-bold font-mono text-xs shrink-0">
             RME
           </div>
-          <span className="font-bold tracking-tight text-sm">Elewental Palette Editor</span>
+          <span className="font-bold tracking-tight text-sm whitespace-nowrap">Elewental Palette Editor</span>
         </div>
 
-        {/* Category tabs */}
-        <nav className="flex items-center gap-1 flex-1">
+        <nav className="flex items-center gap-1 flex-1 overflow-x-auto">
           {categories.map((cat) => {
             const Icon = cat.icon;
             const isActive = state.activeCategory === cat.id;
@@ -102,7 +107,7 @@ export default function Home() {
                 key={cat.id}
                 variant={isActive ? "secondary" : "ghost"}
                 size="sm"
-                className={`gap-2 ${isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground"}`}
+                className={`gap-2 shrink-0 ${isActive ? "bg-secondary text-secondary-foreground" : "text-muted-foreground"}`}
                 onClick={() => dispatch({ type: "SET_CATEGORY", category: cat.id })}
                 data-testid={`tab-${cat.id}`}
               >
@@ -113,11 +118,10 @@ export default function Home() {
           })}
         </nav>
 
-        {/* Dark mode toggle */}
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
           onClick={() => setDarkMode((d) => !d)}
           data-testid="button-toggle-dark-mode"
           title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
@@ -130,13 +134,12 @@ export default function Home() {
         {/* ── Left Sidebar ── */}
         <aside
           className={[
-            "border-r border-border bg-sidebar flex flex-col shrink-0 transition-all duration-200 relative",
+            "border-r border-border bg-sidebar flex flex-col shrink-0 transition-all duration-200",
             sidebarOpen ? "w-60" : "w-10",
           ].join(" ")}
         >
           {sidebarOpen ? (
             <>
-              {/* Sidebar header */}
               <div className="p-3 border-b border-border flex items-center justify-between min-h-[48px]">
                 <h2 className="font-semibold text-sidebar-foreground capitalize text-sm">
                   {state.activeCategory}
@@ -163,7 +166,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Item list */}
               <ScrollArea className="flex-1 p-1.5">
                 <div className="space-y-0.5">
                   {currentItems.map((item) => (
@@ -208,7 +210,6 @@ export default function Home() {
               </ScrollArea>
             </>
           ) : (
-            /* Collapsed sidebar — just an expand button */
             <div className="flex flex-col items-center pt-2 gap-2">
               <button
                 type="button"
@@ -219,25 +220,23 @@ export default function Home() {
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
-              {/* Item count badge */}
               {currentItems.length > 0 && (
-                <span className="text-[10px] font-mono text-muted-foreground">
-                  {currentItems.length}
-                </span>
+                <span className="text-[10px] font-mono text-muted-foreground">{currentItems.length}</span>
               )}
             </div>
           )}
         </aside>
 
-        {/* ── Main Editor Area ── */}
+        {/* ── Main Editor ── */}
         <main className="flex-1 overflow-y-auto bg-background">
           {state.activeCategory === "borders" && <BorderEditor />}
           {state.activeCategory === "grounds" && <GroundEditor />}
           {state.activeCategory === "walls"   && <WallEditor />}
+          {state.activeCategory === "carpets" && <CarpetEditor />}
           {state.activeCategory === "doodads" && <DoodadEditor />}
         </main>
 
-        {/* ── Right XML Preview ── */}
+        {/* ── XML Preview ── */}
         <aside className="w-96 shrink-0">
           <XmlPreview />
         </aside>
