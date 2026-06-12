@@ -44,7 +44,16 @@ export default function Home() {
     { id: "doodads", label: "Doodads", icon: ImageIcon },
   ];
 
-  const currentItems = state[state.activeCategory];
+  const currentItems: { id: string; [key: string]: any }[] = (() => {
+    switch (state.activeCategory) {
+      case "borders": return state.borders;
+      case "grounds": return state.grounds;
+      case "doodads": return state.doodads;
+      case "carpets": return state.carpets ?? [];
+      case "walls":   return state.walls;
+      default:        return [];
+    }
+  })();
 
   const handleCreate = () => {
     const id = crypto.randomUUID();
