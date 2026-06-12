@@ -1,7 +1,7 @@
 export type BorderDirection = "n" | "s" | "e" | "w" | "cnw" | "cne" | "csw" | "cse" | "dnw" | "dne" | "dsw" | "dse";
 
 export interface BorderItem {
-  id: string; // The react UUID
+  id: string;
   borderId: number;
   group?: number;
   comment?: string;
@@ -18,9 +18,9 @@ export interface GroundItem {
   friends: string[];
 }
 
-export type DoodadElementType = 
-  | { type: "simple"; id: number; chance: number; }
-  | { type: "composite"; chance: number; tiles: { x: number; y: number; itemId: number }[]; }
+export type DoodadElementType =
+  | { type: "simple"; id: number; chance: number; alternate?: boolean; }
+  | { type: "composite"; chance: number; tiles: { x: number; y: number; itemId: number }[]; alternate?: boolean; }
   | { type: "alternate"; items: { id: number; chance: number; }[]; };
 
 export interface DoodadItem {
@@ -29,7 +29,7 @@ export interface DoodadItem {
   serverLookId?: number;
   draggable: boolean;
   onBlocking: boolean;
-  thickness: string; // e.g. "15/100"
+  thickness: string;
   elements: DoodadElementType[];
 }
 

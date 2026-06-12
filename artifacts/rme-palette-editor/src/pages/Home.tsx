@@ -89,7 +89,7 @@ export default function Home() {
           <div className="w-8 h-8 rounded bg-primary text-primary-foreground flex items-center justify-center font-bold font-mono text-xs">
             RME
           </div>
-          <span className="font-bold tracking-tight text-sm">Palette Editor</span>
+          <span className="font-bold tracking-tight text-sm">Elewental Palette Editor</span>
         </div>
 
         {/* Category tabs */}
