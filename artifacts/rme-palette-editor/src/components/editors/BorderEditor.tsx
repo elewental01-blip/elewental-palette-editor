@@ -8,33 +8,37 @@ import { Plus, X, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // ── SVG border direction icons ────────────────────────────────────────────────
-// Each 24×24 icon shows a small tile diagram:
-//   ground = muted fill, accent = where the border tile sits
+// Each 24×24 icon represents how the border tile looks:
+//   ground (g) = muted fill, accent (a) = where the border tile overlaps
 
 function BorderIcon({ dir }: { dir: BorderDirection }) {
-  const g = "hsl(215 20% 30%)"; // ground
-  const a = "hsl(45 90% 55%)";  // accent (border tile)
+  const g = "hsl(215 20% 30%)"; // ground color
+  const a = "hsl(45 90% 55%)";  // accent / border tile color
 
   const icons: Record<BorderDirection, JSX.Element> = {
-    // Cardinal edges — full bar on one side
+    // Cardinal edges
+    // N border = tile at the NORTH edge → ground is ABOVE (north side), so accent at BOTTOM
     n: (
-      <>
-        <rect width="24" height="7" fill={a} />
-        <rect y="7" width="24" height="17" fill={g} />
-      </>
-    ),
-    s: (
       <>
         <rect width="24" height="17" fill={g} />
         <rect y="17" width="24" height="7" fill={a} />
       </>
     ),
+    // S border = tile at the SOUTH edge → ground is BELOW (south side), so accent at TOP
+    s: (
+      <>
+        <rect width="24" height="7" fill={a} />
+        <rect y="7" width="24" height="17" fill={g} />
+      </>
+    ),
+    // E border = tile at the EAST edge → accent at RIGHT side
     e: (
       <>
         <rect width="17" height="24" fill={g} />
         <rect x="17" width="7" height="24" fill={a} />
       </>
     ),
+    // W border = tile at the WEST edge → accent at LEFT side
     w: (
       <>
         <rect width="7" height="24" fill={a} />
@@ -42,58 +46,63 @@ function BorderIcon({ dir }: { dir: BorderDirection }) {
       </>
     ),
 
-    // Concave (inner) corners — square block in corner
+    // Concave (inner) corners — small square block in the relevant corner
+    // CNW: inner corner at North-West → accent at TOP-LEFT
     cnw: (
       <>
         <rect width="24" height="24" fill={g} />
-        <rect x="17" y="17" width="7" height="7" fill={a} />
-        {/* Inner corner mark: small L at bottom-right */}
-        <rect x="17" y="0" width="7" height="1" fill={a} opacity="0.3" />
-        <rect x="0" y="17" width="1" height="7" fill={a} opacity="0.3" />
+        <rect x="0" y="0" width="9" height="9" fill={a} />
       </>
     ),
+    // CNE: inner corner at North-East → accent at TOP-RIGHT
     cne: (
       <>
         <rect width="24" height="24" fill={g} />
-        <rect x="0" y="17" width="7" height="7" fill={a} />
+        <rect x="15" y="0" width="9" height="9" fill={a} />
       </>
     ),
+    // CSW: inner corner at South-West → accent at BOTTOM-LEFT
     csw: (
       <>
         <rect width="24" height="24" fill={g} />
-        <rect x="17" y="0" width="7" height="7" fill={a} />
+        <rect x="0" y="15" width="9" height="9" fill={a} />
       </>
     ),
+    // CSE: inner corner at South-East → accent at BOTTOM-RIGHT
     cse: (
       <>
         <rect width="24" height="24" fill={g} />
-        <rect x="0" y="0" width="7" height="7" fill={a} />
+        <rect x="15" y="15" width="9" height="9" fill={a} />
       </>
     ),
 
-    // Diagonal (outer/convex) corners — triangle in corner
+    // Diagonal (outer / convex) corners — triangle pointing into the corner
+    // DNW: diagonal at North-West → triangle at TOP-LEFT
     dnw: (
       <>
         <rect width="24" height="24" fill={g} />
-        <polygon points="24,24 24,10 10,24" fill={a} />
+        <polygon points="0,0 0,14 14,0" fill={a} />
       </>
     ),
+    // DNE: diagonal at North-East → triangle at TOP-RIGHT
     dne: (
       <>
         <rect width="24" height="24" fill={g} />
-        <polygon points="0,24 0,10 14,24" fill={a} />
+        <polygon points="24,0 10,0 24,14" fill={a} />
       </>
     ),
+    // DSW: diagonal at South-West → triangle at BOTTOM-LEFT
     dsw: (
       <>
         <rect width="24" height="24" fill={g} />
-        <polygon points="24,0 24,14 10,0" fill={a} />
+        <polygon points="0,24 14,24 0,10" fill={a} />
       </>
     ),
+    // DSE: diagonal at South-East → triangle at BOTTOM-RIGHT
     dse: (
       <>
         <rect width="24" height="24" fill={g} />
-        <polygon points="0,0 0,14 14,0" fill={a} />
+        <polygon points="24,24 24,10 10,24" fill={a} />
       </>
     ),
   };
@@ -103,14 +112,14 @@ function BorderIcon({ dir }: { dir: BorderDirection }) {
       viewBox="0 0 24 24"
       width={28}
       height={28}
-      style={{ display: "block", borderRadius: 3, overflow: "hidden" }}
+      style={{ display: "block", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}
     >
       {icons[dir]}
     </svg>
   );
 }
 
-// ── Cell component (self-contained) ──────────────────────────────────────────
+// ── Self-contained direction cell ─────────────────────────────────────────────
 
 function DirectionCell({
   dir,
@@ -125,31 +134,22 @@ function DirectionCell({
 }) {
   const hasItems = items.length > 0;
 
-  const addId = (raw: string) => {
-    const val = parseInt(raw);
-    if (val && !isNaN(val)) onUpdate([...items, val]);
-  };
-
   return (
     <div
       className={[
         "flex flex-col rounded-lg border overflow-hidden transition-colors",
-        hasItems
-          ? "border-primary/50 bg-card"
-          : "border-border/40 bg-card/60",
+        hasItems ? "border-primary/50 bg-card" : "border-border/40 bg-card/60",
       ].join(" ")}
       data-testid={`border-cell-${dir}`}
     >
-      {/* Header */}
+      {/* Header: icon + label */}
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/30 bg-muted/30">
         <BorderIcon dir={dir} />
         <span className="text-xs font-mono font-bold text-foreground/80 uppercase tracking-wide">
           {label}
         </span>
         {hasItems && (
-          <span className="ml-auto text-[10px] text-primary/80 font-mono">
-            ×{items.length}
-          </span>
+          <span className="ml-auto text-[10px] text-primary/80 font-mono">×{items.length}</span>
         )}
       </div>
 
@@ -159,7 +159,7 @@ function DirectionCell({
           <Badge
             key={`${dir}-${idx}`}
             variant="secondary"
-            className="px-1 py-0 h-5 text-[10px] gap-0.5 pr-0.5"
+            className="px-1.5 py-0.5 h-5 text-[10px] gap-1"
           >
             {item}
             <button
@@ -168,20 +168,23 @@ function DirectionCell({
               className="hover:bg-destructive hover:text-destructive-foreground rounded-full p-0.5 transition-colors"
               data-testid={`button-remove-${dir}-${idx}`}
             >
-              <X className="w-2 h-2" />
+              <X className="w-2.5 h-2.5" />
             </button>
           </Badge>
         ))}
       </div>
 
-      {/* Inline add input */}
+      {/* Inline ID input */}
       <form
         className="flex items-center gap-0 px-2 pb-2 pt-1 mt-auto"
         onSubmit={(e) => {
           e.preventDefault();
           const inp = (e.target as HTMLFormElement).elements.namedItem("val") as HTMLInputElement;
-          addId(inp.value);
-          inp.value = "";
+          const val = parseInt(inp.value);
+          if (val && !isNaN(val)) {
+            onUpdate([...items, val]);
+            inp.value = "";
+          }
         }}
       >
         <Input
@@ -234,13 +237,12 @@ export function BorderEditor() {
     });
   };
 
-  // 5×5 grid layout matching RME visual
-  // Each entry: [key, label] | null (empty spacer) | "ctr" (center tile)
   type CellDef =
     | { type: "dir"; dir: BorderDirection; label: string }
     | { type: "empty" }
     | { type: "ctr" };
 
+  // 5×5 layout matching RME visual reference
   const layout: CellDef[] = [
     { type: "dir", dir: "cse", label: "CSE" }, { type: "empty" }, { type: "dir", dir: "n",   label: "N"   }, { type: "empty" }, { type: "dir", dir: "csw", label: "CSW" },
     { type: "dir", dir: "dse", label: "DSE" }, { type: "empty" }, { type: "empty" },                          { type: "empty" }, { type: "dir", dir: "dsw", label: "DSW" },
@@ -302,7 +304,7 @@ export function BorderEditor() {
           <div>
             <h2 className="text-xl font-bold">Direction Grid</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Each cell shows where that border tile sits. Type an ID and press Enter or click +.
+              Each icon shows where the border tile sits. Type an ID and press Enter or click +.
             </p>
           </div>
           <Button
@@ -334,10 +336,8 @@ export function BorderEditor() {
                     key="ctr"
                     className="rounded-lg border border-border/30 bg-muted/20 flex items-center justify-center min-h-[100px]"
                   >
-                    {/* Center tile — ground reference */}
                     <svg viewBox="0 0 32 32" width={36} height={36} style={{ borderRadius: 4, overflow: "hidden" }}>
                       <rect width="32" height="32" fill="hsl(215 20% 30%)" />
-                      {/* Subtle grid lines */}
                       <line x1="0" y1="16" x2="32" y2="16" stroke="hsl(215 20% 40%)" strokeWidth="0.5" />
                       <line x1="16" y1="0" x2="16" y2="32" stroke="hsl(215 20% 40%)" strokeWidth="0.5" />
                     </svg>
@@ -360,15 +360,24 @@ export function BorderEditor() {
           {/* Legend */}
           <div className="mt-5 flex items-center gap-6 justify-center text-[11px] text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="4" fill="hsl(45 90% 55%)" /><rect y="4" width="14" height="10" fill="hsl(215 20% 30%)" /></svg>
+              <svg viewBox="0 0 14 14" width={14} height={14}>
+                <rect width="14" height="10" fill="hsl(215 20% 30%)" />
+                <rect y="10" width="14" height="4" fill="hsl(45 90% 55%)" />
+              </svg>
               Edge (N/S/E/W)
             </div>
             <div className="flex items-center gap-1.5">
-              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="14" fill="hsl(215 20% 30%)" /><rect x="9" y="9" width="5" height="5" fill="hsl(45 90% 55%)" /></svg>
+              <svg viewBox="0 0 14 14" width={14} height={14}>
+                <rect width="14" height="14" fill="hsl(215 20% 30%)" />
+                <rect width="5" height="5" fill="hsl(45 90% 55%)" />
+              </svg>
               Concave corner (C)
             </div>
             <div className="flex items-center gap-1.5">
-              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="14" fill="hsl(215 20% 30%)" /><polygon points="14,14 14,6 6,14" fill="hsl(45 90% 55%)" /></svg>
+              <svg viewBox="0 0 14 14" width={14} height={14}>
+                <rect width="14" height="14" fill="hsl(215 20% 30%)" />
+                <polygon points="0,0 8,0 0,8" fill="hsl(45 90% 55%)" />
+              </svg>
               Diagonal corner (D)
             </div>
           </div>

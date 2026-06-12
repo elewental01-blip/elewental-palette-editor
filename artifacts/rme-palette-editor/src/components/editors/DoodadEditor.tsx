@@ -23,17 +23,15 @@ function CompositeTileGrid({
   const [editingCell, setEditingCell] = useState<{ x: number; y: number } | null>(null);
   const [newItemId, setNewItemId] = useState("");
 
-  // Compute visible grid bounds (always show at least a 3×3, expand as needed)
   const minX = Math.min(0, ...tiles.map((t) => t.x));
   const maxX = Math.max(2, ...tiles.map((t) => t.x));
   const minY = Math.min(0, ...tiles.map((t) => t.y));
   const maxY = Math.max(2, ...tiles.map((t) => t.y));
 
-  // Pad 1 cell around occupied area so the user can always click to expand
   const startX = minX - 1;
-  const endX = maxX + 1;
+  const endX   = maxX + 1;
   const startY = minY - 1;
-  const endY = maxY + 1;
+  const endY   = maxY + 1;
 
   const cols = endX - startX + 1;
   const rows = endY - startY + 1;
@@ -43,11 +41,9 @@ function CompositeTileGrid({
   const handleCellClick = (x: number, y: number) => {
     const existing = tileAt(x, y);
     if (existing) {
-      // Remove tile
       onChange(tiles.filter((t) => !(t.x === x && t.y === y)));
       if (editingCell?.x === x && editingCell?.y === y) setEditingCell(null);
     } else {
-      // Start adding a tile — open inline ID prompt
       setEditingCell({ x, y });
       setNewItemId("");
     }
@@ -55,33 +51,28 @@ function CompositeTileGrid({
 
   const commitAdd = (x: number, y: number) => {
     const id = parseInt(newItemId);
-    if (!isNaN(id) && id > 0) {
-      onChange([...tiles, { x, y, itemId: id }]);
-    }
+    if (!isNaN(id) && id > 0) onChange([...tiles, { x, y, itemId: id }]);
     setEditingCell(null);
     setNewItemId("");
   };
 
-  const updateItemId = (x: number, y: number, rawVal: string) => {
-    const id = parseInt(rawVal);
-    if (!isNaN(id) && id > 0) {
+  const updateItemId = (x: number, y: number, raw: string) => {
+    const id = parseInt(raw);
+    if (!isNaN(id) && id > 0)
       onChange(tiles.map((t) => (t.x === x && t.y === y ? { ...t, itemId: id } : t)));
-    }
   };
 
-  // Grid cell size in px (compact)
-  const cellSize = 56;
+  // Larger cells for easier clicking
+  const cellSize = 72;
 
   return (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground font-mono">
-          Grid — click empty cell to add tile, click filled cell to remove
-        </span>
-      </div>
+    <div className="space-y-3">
+      <p className="text-[11px] text-muted-foreground">
+        Click an empty cell to place a tile there. Click a filled cell to remove it.
+      </p>
 
       <div
-        className="inline-grid gap-0.5 rounded-md overflow-hidden border border-border/50 bg-sidebar p-1"
+        className="inline-grid gap-1 rounded-lg border border-border/50 bg-sidebar p-2"
         style={{ gridTemplateColumns: `repeat(${cols}, ${cellSize}px)` }}
         data-testid="composite-tile-grid"
       >
@@ -89,47 +80,45 @@ function CompositeTileGrid({
           Array.from({ length: cols }).map((_, colIdx) => {
             const x = startX + colIdx;
             const y = startY + rowIdx;
-            const tile = tileAt(x, y);
+            const tile     = tileAt(x, y);
             const isEditing = editingCell?.x === x && editingCell?.y === y;
-            const isOrigin = x === 0 && y === 0;
+            const isOrigin  = x === 0 && y === 0;
 
             return (
               <div
                 key={`${x}-${y}`}
                 data-testid={`composite-cell-${x}-${y}`}
                 className={[
-                  "relative flex flex-col items-center justify-center rounded transition-all select-none",
+                  "relative flex flex-col items-center justify-center rounded-md transition-all select-none border",
                   tile
-                    ? "bg-primary/20 border border-primary/60 cursor-pointer hover:bg-destructive/20 hover:border-destructive/60"
+                    ? "bg-primary/20 border-primary/60 cursor-pointer hover:bg-destructive/20 hover:border-destructive/60"
                     : isEditing
-                      ? "bg-accent/30 border border-primary border-dashed cursor-pointer"
+                      ? "bg-accent/30 border-primary border-dashed"
                       : isOrigin
-                        ? "bg-muted/40 border border-border/60 border-dashed cursor-pointer hover:bg-accent/20"
-                        : "bg-muted/20 border border-border/20 cursor-pointer hover:bg-accent/20 hover:border-border/40",
+                        ? "bg-muted/40 border-border/60 border-dashed cursor-pointer hover:bg-accent/20"
+                        : "bg-muted/20 border-border/20 cursor-pointer hover:bg-accent/20 hover:border-border/50",
                 ].join(" ")}
                 style={{ width: cellSize, height: cellSize }}
                 onClick={() => !isEditing && handleCellClick(x, y)}
-                title={tile ? `x=${x} y=${y} id=${tile.itemId} — click to remove` : `x=${x} y=${y} — click to add`}
+                title={tile
+                  ? `x=${x} y=${y}  id=${tile.itemId} — clique para remover`
+                  : `x=${x} y=${y} — clique para adicionar`}
               >
                 {/* Coord label */}
-                <span className="absolute top-0.5 left-1 text-[9px] font-mono text-muted-foreground/60">
+                <span className="absolute top-1 left-1.5 text-[10px] font-mono text-muted-foreground/50">
                   {x},{y}
                 </span>
 
-                {isOrigin && !tile && (
-                  <span className="text-[9px] text-muted-foreground/50">origin</span>
-                )}
-
                 {tile && !isEditing && (
-                  <>
-                    <span className="text-[11px] font-mono font-bold text-primary">{tile.itemId}</span>
-                    <span className="text-[8px] text-muted-foreground mt-0.5">click×</span>
-                  </>
+                  <div className="flex flex-col items-center gap-0.5">
+                    <span className="text-sm font-mono font-bold text-primary">{tile.itemId}</span>
+                    <span className="text-[9px] text-muted-foreground/60">click ×</span>
+                  </div>
                 )}
 
                 {isEditing && (
                   <form
-                    className="w-full h-full flex flex-col items-center justify-center gap-0.5 p-1"
+                    className="w-full h-full flex flex-col items-center justify-center gap-1.5 px-2"
                     onClick={(e) => e.stopPropagation()}
                     onSubmit={(e) => { e.preventDefault(); commitAdd(x, y); }}
                   >
@@ -139,23 +128,20 @@ function CompositeTileGrid({
                       placeholder="ID"
                       value={newItemId}
                       onChange={(e) => setNewItemId(e.target.value)}
-                      className="h-7 w-12 text-[11px] text-center px-1"
+                      className="h-8 w-14 text-sm text-center px-1"
                       data-testid={`composite-cell-input-${x}-${y}`}
                     />
                     <button
                       type="submit"
-                      className="text-[9px] text-primary hover:underline"
+                      className="text-[11px] font-medium text-primary hover:underline px-2 py-0.5 rounded hover:bg-primary/10 transition-colors"
                     >
                       add
                     </button>
                   </form>
                 )}
 
-                {!tile && !isEditing && !isOrigin && (
-                  <Plus className="w-3 h-3 text-muted-foreground/30" />
-                )}
-                {!tile && !isEditing && isOrigin && (
-                  <Plus className="w-3 h-3 text-muted-foreground/50" />
+                {!tile && !isEditing && (
+                  <Plus className={`w-4 h-4 ${isOrigin ? "text-muted-foreground/50" : "text-muted-foreground/25"}`} />
                 )}
               </div>
             );
@@ -163,12 +149,13 @@ function CompositeTileGrid({
         )}
       </div>
 
-      {/* Existing tiles also editable as list */}
+      {/* Editable tile list */}
       {tiles.length > 0 && (
-        <div className="space-y-1 pt-1">
+        <div className="space-y-1 pt-1 border-t border-border/30">
+          <p className="text-[10px] text-muted-foreground mb-1.5">Edit IDs directly:</p>
           {tiles.map((tile, tIdx) => (
-            <div key={tIdx} className="flex items-center gap-2 text-xs">
-              <span className="font-mono text-muted-foreground w-16">
+            <div key={tIdx} className="flex items-center gap-2">
+              <span className="font-mono text-xs text-muted-foreground w-14 shrink-0">
                 x={tile.x} y={tile.y}
               </span>
               <Input
@@ -176,17 +163,17 @@ function CompositeTileGrid({
                 placeholder="Item ID"
                 value={tile.itemId || ""}
                 onChange={(e) => updateItemId(tile.x, tile.y, e.target.value)}
-                className="h-6 text-xs flex-1 max-w-[120px]"
+                className="h-7 text-xs max-w-[110px]"
                 data-testid={`composite-tile-id-${tIdx}`}
               />
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 text-destructive"
+                className="h-7 w-7 text-destructive hover:bg-destructive/10"
                 onClick={() => onChange(tiles.filter((_, i) => i !== tIdx))}
                 data-testid={`button-remove-tile-${tIdx}`}
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           ))}
@@ -211,52 +198,36 @@ export function DoodadEditor() {
   }
 
   const updateField = (field: keyof DoodadItem, value: any) => {
-    dispatch({
-      type: "UPDATE_DOODAD",
-      id: activeItem.id,
-      doodad: { ...activeItem, [field]: value },
-    });
+    dispatch({ type: "UPDATE_DOODAD", id: activeItem.id, doodad: { ...activeItem, [field]: value } });
   };
 
   const addElement = (type: "simple" | "composite" | "alternate") => {
     const newElements = [...activeItem.elements];
-    if (type === "simple") {
-      newElements.push({ type: "simple", id: 0, chance: 10 });
-    } else if (type === "composite") {
-      // Start with two tiles at (0,0) and (1,0) as a sensible default
-      newElements.push({ type: "composite", chance: 10, tiles: [{ x: 0, y: 0, itemId: 0 }, { x: 1, y: 0, itemId: 0 }] });
-    } else if (type === "alternate") {
-      newElements.push({ type: "alternate", items: [] });
-    }
+    if (type === "simple")       newElements.push({ type: "simple", id: 0, chance: 10 });
+    else if (type === "composite") newElements.push({ type: "composite", chance: 10, tiles: [{ x: 0, y: 0, itemId: 0 }, { x: 1, y: 0, itemId: 0 }] });
+    else                          newElements.push({ type: "alternate", items: [] });
     updateField("elements", newElements);
   };
 
-  const removeElement = (index: number) => {
-    updateField("elements", activeItem.elements.filter((_, i) => i !== index));
-  };
+  const removeElement = (i: number) => updateField("elements", activeItem.elements.filter((_, idx) => idx !== i));
 
-  const moveElement = (index: number, direction: "up" | "down") => {
-    if (direction === "up" && index > 0) {
-      const el = [...activeItem.elements];
-      [el[index - 1], el[index]] = [el[index], el[index - 1]];
-      updateField("elements", el);
-    } else if (direction === "down" && index < activeItem.elements.length - 1) {
-      const el = [...activeItem.elements];
-      [el[index + 1], el[index]] = [el[index], el[index + 1]];
-      updateField("elements", el);
-    }
-  };
-
-  const updateElement = (index: number, updated: DoodadElementType) => {
+  const moveElement = (i: number, dir: "up" | "down") => {
     const el = [...activeItem.elements];
-    el[index] = updated;
+    if (dir === "up" && i > 0)                        [el[i - 1], el[i]] = [el[i], el[i - 1]];
+    if (dir === "down" && i < el.length - 1)          [el[i + 1], el[i]] = [el[i], el[i + 1]];
     updateField("elements", el);
   };
 
-  const TYPE_COLOR: Record<string, string> = {
-    simple:    "bg-blue-500/20 text-blue-400 border-blue-500/40",
-    composite: "bg-amber-500/20 text-amber-400 border-amber-500/40",
-    alternate: "bg-purple-500/20 text-purple-400 border-purple-500/40",
+  const updateElement = (i: number, updated: DoodadElementType) => {
+    const el = [...activeItem.elements];
+    el[i] = updated;
+    updateField("elements", el);
+  };
+
+  const TYPE_STYLE: Record<string, string> = {
+    simple:    "bg-blue-500/10 border-blue-500/30 text-blue-400",
+    composite: "bg-amber-500/10 border-amber-500/30 text-amber-400",
+    alternate: "bg-purple-500/10 border-purple-500/30 text-purple-400",
   };
 
   return (
@@ -327,31 +298,19 @@ export function DoodadEditor() {
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Elements</h3>
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => addElement("simple")}
-              data-testid="button-add-simple"
+            <Button size="sm" variant="outline" onClick={() => addElement("simple")}
               className="text-blue-400 border-blue-500/40 hover:bg-blue-500/10"
-            >
-              + Simple Item
+              data-testid="button-add-simple">
+              + Simple
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => addElement("composite")}
-              data-testid="button-add-composite"
+            <Button size="sm" variant="outline" onClick={() => addElement("composite")}
               className="text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
-            >
+              data-testid="button-add-composite">
               + Composite
             </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => addElement("alternate")}
-              data-testid="button-add-alternate"
+            <Button size="sm" variant="outline" onClick={() => addElement("alternate")}
               className="text-purple-400 border-purple-500/40 hover:bg-purple-500/10"
-            >
+              data-testid="button-add-alternate">
               + Alternate
             </Button>
           </div>
@@ -359,14 +318,9 @@ export function DoodadEditor() {
 
         <div className="space-y-3">
           {activeItem.elements.map((el, idx) => (
-            <div
-              key={idx}
-              className="rounded-lg overflow-hidden border border-border/40"
-              data-testid={`element-${idx}`}
-            >
-              {/* Header bar */}
-              <div className={`px-3 py-2 flex items-center justify-between border-b border-border/30 ${TYPE_COLOR[el.type].replace("bg-", "bg-").split(" ")[0]}`}>
-                <span className={`text-xs font-mono font-bold uppercase ${TYPE_COLOR[el.type].split(" ")[1]}`}>
+            <div key={idx} className="rounded-lg overflow-hidden border border-border/40" data-testid={`element-${idx}`}>
+              <div className={`px-3 py-2 flex items-center justify-between border-b border-border/20 ${TYPE_STYLE[el.type].split(" ")[0]}`}>
+                <span className={`text-xs font-mono font-bold uppercase ${TYPE_STYLE[el.type].split(" ")[2]}`}>
                   {el.type}
                   {el.type === "composite" && ` — ${el.tiles.length} tile${el.tiles.length !== 1 ? "s" : ""}`}
                   {el.type === "alternate" && ` — ${el.items.length} item${el.items.length !== 1 ? "s" : ""}`}
@@ -378,58 +332,34 @@ export function DoodadEditor() {
                   <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveElement(idx, "down")} disabled={idx === activeItem.elements.length - 1} data-testid={`button-move-down-${idx}`}>
                     <ArrowDown className="h-3 w-3" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeElement(idx)} data-testid={`button-remove-element-${idx}`}>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={() => removeElement(idx)} data-testid={`button-remove-element-${idx}`}>
                     <Trash2 className="h-3 w-3" />
                   </Button>
                 </div>
               </div>
 
               <CardContent className="p-4 bg-card">
-                {/* ── Simple item ── */}
                 {el.type === "simple" && (
-                  <div className="flex items-center gap-4">
+                  <div className="flex gap-4">
                     <div className="space-y-1 flex-1">
                       <Label className="text-xs">Item ID</Label>
-                      <Input
-                        type="number"
-                        value={el.id || ""}
-                        onChange={(e) => updateElement(idx, { ...el, id: parseInt(e.target.value) || 0 })}
-                        className="h-8"
-                        data-testid={`input-simple-id-${idx}`}
-                      />
+                      <Input type="number" value={el.id || ""} onChange={(e) => updateElement(idx, { ...el, id: parseInt(e.target.value) || 0 })} className="h-8" data-testid={`input-simple-id-${idx}`} />
                     </div>
                     <div className="space-y-1 flex-1">
                       <Label className="text-xs">Chance</Label>
-                      <Input
-                        type="number"
-                        value={el.chance || ""}
-                        onChange={(e) => updateElement(idx, { ...el, chance: parseInt(e.target.value) || 0 })}
-                        className="h-8"
-                        data-testid={`input-simple-chance-${idx}`}
-                      />
+                      <Input type="number" value={el.chance || ""} onChange={(e) => updateElement(idx, { ...el, chance: parseInt(e.target.value) || 0 })} className="h-8" data-testid={`input-simple-chance-${idx}`} />
                     </div>
                   </div>
                 )}
 
-                {/* ── Composite ── */}
                 {el.type === "composite" && (
                   <div className="space-y-4">
-                    <div className="space-y-1 w-1/3">
+                    <div className="w-1/3">
                       <Label className="text-xs">Chance</Label>
-                      <Input
-                        type="number"
-                        value={el.chance || ""}
-                        onChange={(e) => updateElement(idx, { ...el, chance: parseInt(e.target.value) || 0 })}
-                        className="h-8"
-                        data-testid={`input-composite-chance-${idx}`}
-                      />
+                      <Input type="number" value={el.chance || ""} onChange={(e) => updateElement(idx, { ...el, chance: parseInt(e.target.value) || 0 })} className="h-8 mt-1" data-testid={`input-composite-chance-${idx}`} />
                     </div>
-
                     <div>
                       <Label className="text-xs font-bold mb-2 block">Tile Layout</Label>
-                      <p className="text-[11px] text-muted-foreground mb-3">
-                        Click empty cells to add tiles, filled cells to remove. Each cell shows the item ID at that grid position.
-                      </p>
                       <CompositeTileGrid
                         tiles={el.tiles}
                         onChange={(newTiles) => updateElement(idx, { ...el, tiles: newTiles })}
@@ -438,71 +368,42 @@ export function DoodadEditor() {
                   </div>
                 )}
 
-                {/* ── Alternate ── */}
                 {el.type === "alternate" && (
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <Label className="text-xs font-bold">Items</Label>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-2 text-xs"
+                      <Button size="sm" variant="ghost" className="h-6 px-2 text-xs"
                         onClick={() => updateElement(idx, { ...el, items: [...el.items, { id: 0, chance: 10 }] })}
-                        data-testid={`button-add-alternate-item-${idx}`}
-                      >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Add Item
+                        data-testid={`button-add-alternate-item-${idx}`}>
+                        <Plus className="w-3 h-3 mr-1" /> Add Item
                       </Button>
                     </div>
                     <div className="space-y-2">
                       {el.items.map((item, iIdx) => (
-                        <div key={iIdx} className="flex items-center gap-2">
+                        <div key={iIdx} className="flex items-end gap-2">
                           <div className="space-y-0.5 flex-1">
                             <Label className="text-[10px] text-muted-foreground">Item ID</Label>
-                            <Input
-                              type="number"
-                              placeholder="Item ID"
-                              value={item.id || ""}
-                              onChange={(e) => {
-                                const newItems = [...el.items];
-                                newItems[iIdx] = { ...item, id: parseInt(e.target.value) || 0 };
-                                updateElement(idx, { ...el, items: newItems });
-                              }}
-                              className="h-8"
-                              data-testid={`input-alternate-id-${idx}-${iIdx}`}
-                            />
+                            <Input type="number" value={item.id || ""} onChange={(e) => {
+                              const n = [...el.items]; n[iIdx] = { ...item, id: parseInt(e.target.value) || 0 };
+                              updateElement(idx, { ...el, items: n });
+                            }} className="h-8" data-testid={`input-alternate-id-${idx}-${iIdx}`} />
                           </div>
                           <div className="space-y-0.5 flex-1">
                             <Label className="text-[10px] text-muted-foreground">Chance</Label>
-                            <Input
-                              type="number"
-                              placeholder="Chance"
-                              value={item.chance || ""}
-                              onChange={(e) => {
-                                const newItems = [...el.items];
-                                newItems[iIdx] = { ...item, chance: parseInt(e.target.value) || 0 };
-                                updateElement(idx, { ...el, items: newItems });
-                              }}
-                              className="h-8"
-                              data-testid={`input-alternate-chance-${idx}-${iIdx}`}
-                            />
+                            <Input type="number" value={item.chance || ""} onChange={(e) => {
+                              const n = [...el.items]; n[iIdx] = { ...item, chance: parseInt(e.target.value) || 0 };
+                              updateElement(idx, { ...el, items: n });
+                            }} className="h-8" data-testid={`input-alternate-chance-${idx}-${iIdx}`} />
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive mt-4"
-                            onClick={() => {
-                              const newItems = el.items.filter((_, i) => i !== iIdx);
-                              updateElement(idx, { ...el, items: newItems });
-                            }}
-                            data-testid={`button-remove-alternate-item-${idx}-${iIdx}`}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                            onClick={() => updateElement(idx, { ...el, items: el.items.filter((_, i) => i !== iIdx) })}
+                            data-testid={`button-remove-alternate-${idx}-${iIdx}`}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       ))}
                       {el.items.length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-3 border border-dashed rounded">
+                        <p className="text-xs text-muted-foreground text-center py-4 border border-dashed rounded">
                           No items in alternate block.
                         </p>
                       )}
@@ -515,7 +416,7 @@ export function DoodadEditor() {
 
           {activeItem.elements.length === 0 && (
             <p className="text-sm text-muted-foreground py-8 text-center border border-dashed rounded-lg">
-              No elements added. Use the buttons above to add Simple Items, Composites, or Alternates.
+              No elements. Use the buttons above to add Simple Items, Composites, or Alternates.
             </p>
           )}
         </div>
