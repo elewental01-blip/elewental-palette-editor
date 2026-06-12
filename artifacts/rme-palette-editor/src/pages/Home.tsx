@@ -115,28 +115,34 @@ export default function Home() {
           <ScrollArea className="flex-1 p-2">
             <div className="space-y-1">
               {currentItems.map((item) => (
-                <button
+                <div
                   key={item.id}
-                  className={`w-full text-left px-3 py-2 text-sm rounded-md flex items-center justify-between group transition-colors ${
-                    state.activeItemId === item.id 
-                      ? "bg-primary text-primary-foreground" 
+                  role="button"
+                  tabIndex={0}
+                  className={`w-full text-left px-3 py-2 text-sm rounded-md flex items-center justify-between group transition-colors cursor-pointer ${
+                    state.activeItemId === item.id
+                      ? "bg-primary text-primary-foreground"
                       : "hover:bg-sidebar-accent text-sidebar-foreground"
                   }`}
                   onClick={() => dispatch({ type: "SET_ACTIVE_ITEM", id: item.id })}
+                  onKeyDown={(e) => e.key === "Enter" && dispatch({ type: "SET_ACTIVE_ITEM", id: item.id })}
                   data-testid={`sidebar-item-${item.id}`}
                 >
                   <span className="truncate">{getItemLabel(item)}</span>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className={`w-6 h-6 opacity-0 group-hover:opacity-100 ${
-                      state.activeItemId === item.id ? "text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground" : "text-muted-foreground hover:text-destructive"
+                  <button
+                    type="button"
+                    aria-label="Delete"
+                    className={`w-6 h-6 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded transition-colors ${
+                      state.activeItemId === item.id
+                        ? "text-primary-foreground hover:bg-primary-foreground/20"
+                        : "text-muted-foreground hover:text-destructive"
                     }`}
                     onClick={(e) => handleDelete(item.id, e)}
+                    data-testid={`button-delete-${item.id}`}
                   >
                     <Trash2 className="w-3 h-3" />
-                  </Button>
-                </button>
+                  </button>
+                </div>
               ))}
               
               {currentItems.length === 0 && (
