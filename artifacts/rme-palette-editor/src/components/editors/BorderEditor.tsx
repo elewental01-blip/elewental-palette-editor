@@ -8,112 +8,30 @@ import { Plus, X, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // ── SVG border direction icons ────────────────────────────────────────────────
-// Each 24×24 icon represents how the border tile looks:
-//   ground (g) = muted fill, accent (a) = where the border tile overlaps
 
 function BorderIcon({ dir }: { dir: BorderDirection }) {
-  const g = "hsl(215 20% 30%)"; // ground color
-  const a = "hsl(45 90% 55%)";  // accent / border tile color
+  const g = "hsl(215 20% 30%)";
+  const a = "hsl(45 90% 55%)";
 
   const icons: Record<BorderDirection, JSX.Element> = {
-    // Cardinal edges
-    // N border = tile at the NORTH edge → ground is ABOVE (north side), so accent at BOTTOM
-    n: (
-      <>
-        <rect width="24" height="17" fill={g} />
-        <rect y="17" width="24" height="7" fill={a} />
-      </>
-    ),
-    // S border = tile at the SOUTH edge → ground is BELOW (south side), so accent at TOP
-    s: (
-      <>
-        <rect width="24" height="7" fill={a} />
-        <rect y="7" width="24" height="17" fill={g} />
-      </>
-    ),
-    // E border = tile at the EAST edge → accent at RIGHT side
-    e: (
-      <>
-        <rect width="17" height="24" fill={g} />
-        <rect x="17" width="7" height="24" fill={a} />
-      </>
-    ),
-    // W border = tile at the WEST edge → accent at LEFT side
-    w: (
-      <>
-        <rect width="7" height="24" fill={a} />
-        <rect x="7" width="17" height="24" fill={g} />
-      </>
-    ),
-
-    // Concave (inner) corners — small square block in the relevant corner
-    // CNW: inner corner at North-West → accent at TOP-LEFT
-    cnw: (
-      <>
-        <rect width="24" height="24" fill={g} />
-        <rect x="0" y="0" width="9" height="9" fill={a} />
-      </>
-    ),
-    // CNE: inner corner at North-East → accent at TOP-RIGHT
-    cne: (
-      <>
-        <rect width="24" height="24" fill={g} />
-        <rect x="15" y="0" width="9" height="9" fill={a} />
-      </>
-    ),
-    // CSW: inner corner at South-West → accent at BOTTOM-LEFT
-    csw: (
-      <>
-        <rect width="24" height="24" fill={g} />
-        <rect x="0" y="15" width="9" height="9" fill={a} />
-      </>
-    ),
-    // CSE: inner corner at South-East → accent at BOTTOM-RIGHT
-    cse: (
-      <>
-        <rect width="24" height="24" fill={g} />
-        <rect x="15" y="15" width="9" height="9" fill={a} />
-      </>
-    ),
-
-    // Diagonal (outer / convex) corners — triangle pointing into the corner
-    // DNW: diagonal at North-West → triangle at TOP-LEFT
-    dnw: (
-      <>
-        <rect width="24" height="24" fill={g} />
-        <polygon points="0,0 0,14 14,0" fill={a} />
-      </>
-    ),
-    // DNE: diagonal at North-East → triangle at TOP-RIGHT
-    dne: (
-      <>
-        <rect width="24" height="24" fill={g} />
-        <polygon points="24,0 10,0 24,14" fill={a} />
-      </>
-    ),
-    // DSW: diagonal at South-West → triangle at BOTTOM-LEFT
-    dsw: (
-      <>
-        <rect width="24" height="24" fill={g} />
-        <polygon points="0,24 14,24 0,10" fill={a} />
-      </>
-    ),
-    // DSE: diagonal at South-East → triangle at BOTTOM-RIGHT
-    dse: (
-      <>
-        <rect width="24" height="24" fill={g} />
-        <polygon points="24,24 24,10 10,24" fill={a} />
-      </>
-    ),
+    // N border = tile at the NORTH edge → accent at BOTTOM
+    n: (<><rect width="24" height="17" fill={g} /><rect y="17" width="24" height="7" fill={a} /></>),
+    // S border = tile at the SOUTH edge → accent at TOP
+    s: (<><rect width="24" height="7" fill={a} /><rect y="7" width="24" height="17" fill={g} /></>),
+    e: (<><rect width="17" height="24" fill={g} /><rect x="17" width="7" height="24" fill={a} /></>),
+    w: (<><rect width="7" height="24" fill={a} /><rect x="7" width="17" height="24" fill={g} /></>),
+    cnw: (<><rect width="24" height="24" fill={g} /><rect x="0" y="0" width="9" height="9" fill={a} /></>),
+    cne: (<><rect width="24" height="24" fill={g} /><rect x="15" y="0" width="9" height="9" fill={a} /></>),
+    csw: (<><rect width="24" height="24" fill={g} /><rect x="0" y="15" width="9" height="9" fill={a} /></>),
+    cse: (<><rect width="24" height="24" fill={g} /><rect x="15" y="15" width="9" height="9" fill={a} /></>),
+    dnw: (<><rect width="24" height="24" fill={g} /><polygon points="0,0 0,14 14,0" fill={a} /></>),
+    dne: (<><rect width="24" height="24" fill={g} /><polygon points="24,0 10,0 24,14" fill={a} /></>),
+    dsw: (<><rect width="24" height="24" fill={g} /><polygon points="0,24 14,24 0,10" fill={a} /></>),
+    dse: (<><rect width="24" height="24" fill={g} /><polygon points="24,24 24,10 10,24" fill={a} /></>),
   };
 
   return (
-    <svg
-      viewBox="0 0 24 24"
-      width={28}
-      height={28}
-      style={{ display: "block", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}
-    >
+    <svg viewBox="0 0 24 24" width={28} height={28} style={{ display: "block", borderRadius: 3, overflow: "hidden", flexShrink: 0 }}>
       {icons[dir]}
     </svg>
   );
@@ -121,12 +39,7 @@ function BorderIcon({ dir }: { dir: BorderDirection }) {
 
 // ── Self-contained direction cell ─────────────────────────────────────────────
 
-function DirectionCell({
-  dir,
-  label,
-  items,
-  onUpdate,
-}: {
+function DirectionCell({ dir, label, items, onUpdate }: {
   dir: BorderDirection;
   label: string;
   items: number[];
@@ -142,7 +55,6 @@ function DirectionCell({
       ].join(" ")}
       data-testid={`border-cell-${dir}`}
     >
-      {/* Header: icon + label */}
       <div className="flex items-center gap-1.5 px-2 py-1.5 border-b border-border/30 bg-muted/30">
         <BorderIcon dir={dir} />
         <span className="text-xs font-mono font-bold text-foreground/80 uppercase tracking-wide">
@@ -153,14 +65,9 @@ function DirectionCell({
         )}
       </div>
 
-      {/* ID badges */}
       <div className="px-2 pt-1.5 flex flex-wrap gap-1 min-h-[24px]">
         {items.map((item, idx) => (
-          <Badge
-            key={`${dir}-${idx}`}
-            variant="secondary"
-            className="px-1.5 py-0.5 h-5 text-[10px] gap-1"
-          >
+          <Badge key={`${dir}-${idx}`} variant="secondary" className="px-1.5 py-0.5 h-5 text-[10px] gap-1">
             {item}
             <button
               type="button"
@@ -174,17 +81,13 @@ function DirectionCell({
         ))}
       </div>
 
-      {/* Inline ID input */}
       <form
         className="flex items-center gap-0 px-2 pb-2 pt-1 mt-auto"
         onSubmit={(e) => {
           e.preventDefault();
           const inp = (e.target as HTMLFormElement).elements.namedItem("val") as HTMLInputElement;
           const val = parseInt(inp.value);
-          if (val && !isNaN(val)) {
-            onUpdate([...items, val]);
-            inp.value = "";
-          }
+          if (val && !isNaN(val)) { onUpdate([...items, val]); inp.value = ""; }
         }}
       >
         <Input
@@ -194,12 +97,7 @@ function DirectionCell({
           className="h-6 text-[11px] px-1.5 rounded-r-none border-r-0 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0"
           data-testid={`input-direction-${dir}`}
         />
-        <Button
-          type="submit"
-          size="icon"
-          className="h-6 w-6 rounded-l-none shrink-0"
-          data-testid={`button-add-${dir}`}
-        >
+        <Button type="submit" size="icon" className="h-6 w-6 rounded-l-none shrink-0" data-testid={`button-add-${dir}`}>
           <Plus className="w-3 h-3" />
         </Button>
       </form>
@@ -222,19 +120,11 @@ export function BorderEditor() {
   }
 
   const updateField = (field: keyof BorderItem, value: any) => {
-    dispatch({
-      type: "UPDATE_BORDER",
-      id: activeItem.id,
-      border: { ...activeItem, [field]: value },
-    });
+    dispatch({ type: "UPDATE_BORDER", id: activeItem.id, border: { ...activeItem, [field]: value } });
   };
 
   const updateDirection = (dir: BorderDirection, value: number[]) => {
-    dispatch({
-      type: "UPDATE_BORDER",
-      id: activeItem.id,
-      border: { ...activeItem, items: { ...activeItem.items, [dir]: value } },
-    });
+    dispatch({ type: "UPDATE_BORDER", id: activeItem.id, border: { ...activeItem, items: { ...activeItem.items, [dir]: value } } });
   };
 
   type CellDef =
@@ -242,18 +132,17 @@ export function BorderEditor() {
     | { type: "empty" }
     | { type: "ctr" };
 
-  // 5×5 layout matching RME visual reference
+  // 5×5 layout — N and S labels are swapped per user request (icons remain correct)
   const layout: CellDef[] = [
-    { type: "dir", dir: "cse", label: "CSE" }, { type: "empty" }, { type: "dir", dir: "n",   label: "N"   }, { type: "empty" }, { type: "dir", dir: "csw", label: "CSW" },
-    { type: "dir", dir: "dse", label: "DSE" }, { type: "empty" }, { type: "empty" },                          { type: "empty" }, { type: "dir", dir: "dsw", label: "DSW" },
-    { type: "empty" },                          { type: "dir", dir: "e",   label: "E"   }, { type: "ctr" }, { type: "dir", dir: "w",   label: "W"   }, { type: "empty" },
-    { type: "dir", dir: "dne", label: "DNE" }, { type: "empty" }, { type: "empty" },                          { type: "empty" }, { type: "dir", dir: "dnw", label: "DNW" },
-    { type: "dir", dir: "cne", label: "CNE" }, { type: "empty" }, { type: "dir", dir: "s",   label: "S"   }, { type: "empty" }, { type: "dir", dir: "cnw", label: "CNW" },
+    { type: "dir", dir: "cse", label: "CSE" }, { type: "empty" }, { type: "dir", dir: "n", label: "S" },   { type: "empty" }, { type: "dir", dir: "csw", label: "CSW" },
+    { type: "dir", dir: "dse", label: "DSE" }, { type: "empty" }, { type: "empty" },                        { type: "empty" }, { type: "dir", dir: "dsw", label: "DSW" },
+    { type: "empty" },                          { type: "dir", dir: "e", label: "E" },   { type: "ctr" },   { type: "dir", dir: "w", label: "W" },   { type: "empty" },
+    { type: "dir", dir: "dne", label: "DNE" }, { type: "empty" }, { type: "empty" },                        { type: "empty" }, { type: "dir", dir: "dnw", label: "DNW" },
+    { type: "dir", dir: "cne", label: "CNE" }, { type: "empty" }, { type: "dir", dir: "s", label: "N" },   { type: "empty" }, { type: "dir", dir: "cnw", label: "CNW" },
   ];
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-200">
-      {/* Meta fields */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Border Configuration</h2>
 
@@ -298,7 +187,6 @@ export function BorderEditor() {
         </div>
       </div>
 
-      {/* Visual grid */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -310,13 +198,7 @@ export function BorderEditor() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() =>
-              updateField("items", {
-                n: [], s: [], e: [], w: [],
-                cnw: [], cne: [], csw: [], cse: [],
-                dnw: [], dne: [], dsw: [], dse: [],
-              })
-            }
+            onClick={() => updateField("items", { n: [], s: [], e: [], w: [], cnw: [], cne: [], csw: [], cse: [], dnw: [], dne: [], dsw: [], dse: [] })}
             data-testid="button-clear-border-items"
           >
             Clear All
@@ -326,25 +208,16 @@ export function BorderEditor() {
         <div className="bg-sidebar rounded-xl border border-sidebar-border p-5">
           <div className="grid grid-cols-5 gap-2 max-w-3xl mx-auto">
             {layout.map((cell, i) => {
-              if (cell.type === "empty") {
-                return <div key={`e-${i}`} className="pointer-events-none" />;
-              }
-
-              if (cell.type === "ctr") {
-                return (
-                  <div
-                    key="ctr"
-                    className="rounded-lg border border-border/30 bg-muted/20 flex items-center justify-center min-h-[100px]"
-                  >
-                    <svg viewBox="0 0 32 32" width={36} height={36} style={{ borderRadius: 4, overflow: "hidden" }}>
-                      <rect width="32" height="32" fill="hsl(215 20% 30%)" />
-                      <line x1="0" y1="16" x2="32" y2="16" stroke="hsl(215 20% 40%)" strokeWidth="0.5" />
-                      <line x1="16" y1="0" x2="16" y2="32" stroke="hsl(215 20% 40%)" strokeWidth="0.5" />
-                    </svg>
-                  </div>
-                );
-              }
-
+              if (cell.type === "empty") return <div key={`e-${i}`} className="pointer-events-none" />;
+              if (cell.type === "ctr") return (
+                <div key="ctr" className="rounded-lg border border-border/30 bg-muted/20 flex items-center justify-center min-h-[100px]">
+                  <svg viewBox="0 0 32 32" width={36} height={36} style={{ borderRadius: 4, overflow: "hidden" }}>
+                    <rect width="32" height="32" fill="hsl(215 20% 30%)" />
+                    <line x1="0" y1="16" x2="32" y2="16" stroke="hsl(215 20% 40%)" strokeWidth="0.5" />
+                    <line x1="16" y1="0" x2="16" y2="32" stroke="hsl(215 20% 40%)" strokeWidth="0.5" />
+                  </svg>
+                </div>
+              );
               return (
                 <DirectionCell
                   key={cell.dir}
@@ -357,27 +230,17 @@ export function BorderEditor() {
             })}
           </div>
 
-          {/* Legend */}
           <div className="mt-5 flex items-center gap-6 justify-center text-[11px] text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <svg viewBox="0 0 14 14" width={14} height={14}>
-                <rect width="14" height="10" fill="hsl(215 20% 30%)" />
-                <rect y="10" width="14" height="4" fill="hsl(45 90% 55%)" />
-              </svg>
+              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="10" fill="hsl(215 20% 30%)" /><rect y="10" width="14" height="4" fill="hsl(45 90% 55%)" /></svg>
               Edge (N/S/E/W)
             </div>
             <div className="flex items-center gap-1.5">
-              <svg viewBox="0 0 14 14" width={14} height={14}>
-                <rect width="14" height="14" fill="hsl(215 20% 30%)" />
-                <rect width="5" height="5" fill="hsl(45 90% 55%)" />
-              </svg>
+              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="14" fill="hsl(215 20% 30%)" /><rect width="5" height="5" fill="hsl(45 90% 55%)" /></svg>
               Concave corner (C)
             </div>
             <div className="flex items-center gap-1.5">
-              <svg viewBox="0 0 14 14" width={14} height={14}>
-                <rect width="14" height="14" fill="hsl(215 20% 30%)" />
-                <polygon points="0,0 8,0 0,8" fill="hsl(45 90% 55%)" />
-              </svg>
+              <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="14" fill="hsl(215 20% 30%)" /><polygon points="0,0 8,0 0,8" fill="hsl(45 90% 55%)" /></svg>
               Diagonal corner (D)
             </div>
           </div>

@@ -11,17 +11,32 @@ export interface BorderItem {
 export interface GroundItem {
   id: string;
   name: string;
-  serverLookId?: number;
-  zOrder?: number;
+  serverLookId: number;
+  zOrder: number;
   items: { id: number; chance: number; }[];
-  borders: { align: "outer" | "inner"; id: number; to?: string; }[];
+  borders: { align: "outer" | "inner"; id: number; }[];
   friends: string[];
 }
+
+// ── Carpet direction types (used inside DoodadElementType) ─────────────────────
+
+export type CarpetAlignDirection =
+  | "n" | "s" | "e" | "w"
+  | "cnw" | "cne" | "csw" | "cse"
+  | "dnw" | "dne" | "dsw" | "dse"
+  | "center";
+
+export type CarpetAlignData =
+  | { type: "single"; id: number }
+  | { type: "multi"; items: { id: number; chance: number }[] };
+
+// ── Doodad element types ───────────────────────────────────────────────────────
 
 export type DoodadElementType =
   | { type: "simple"; id: number; chance: number; alternate?: boolean; }
   | { type: "composite"; chance: number; tiles: { x: number; y: number; itemId: number }[]; alternate?: boolean; }
-  | { type: "alternate"; items: { id: number; chance: number; }[]; };
+  | { type: "alternate"; items: { id: number; chance: number; }[]; }
+  | { type: "carpet"; carpets: Partial<Record<CarpetAlignDirection, CarpetAlignData>>; };
 
 export interface DoodadItem {
   id: string;
@@ -31,27 +46,6 @@ export interface DoodadItem {
   onBlocking: boolean;
   thickness: string;
   elements: DoodadElementType[];
-}
-
-// ── Carpet types ──────────────────────────────────────────────────────────────
-
-export type CarpetAlignDirection =
-  | "n" | "s" | "e" | "w"
-  | "cnw" | "cne" | "csw" | "cse"
-  | "dnw" | "dne" | "dsw" | "dse"
-  | "center";
-
-// Single item → <carpet align="..." id="..."/>
-// Multi items → <carpet align="..."><item chance="..." id="..."/>...</carpet>
-export type CarpetAlignData =
-  | { type: "single"; id: number }
-  | { type: "multi"; items: { id: number; chance: number }[] };
-
-export interface CarpetItem {
-  id: string;
-  name: string;
-  serverLookId?: number;
-  carpets: Partial<Record<CarpetAlignDirection, CarpetAlignData>>;
 }
 
 // ── Wall types ────────────────────────────────────────────────────────────────
@@ -85,10 +79,30 @@ export interface WallItem {
   friends?: { name: string; redirect?: boolean; }[];
 }
 
+// ── Tileset types ─────────────────────────────────────────────────────────────
+
+export type TilesetSectionType = "terrain" | "doodad" | "raw";
+
+export type TilesetEntry =
+  | { kind: "brush"; name: string }
+  | { kind: "item"; id: number }
+  | { kind: "range"; fromid: number; toid: number };
+
+export interface TilesetSection {
+  type: TilesetSectionType;
+  entries: TilesetEntry[];
+}
+
+export interface TilesetItem {
+  id: string;
+  name: string;
+  sections: TilesetSection[];
+}
+
 export interface EditorState {
   borders: BorderItem[];
   grounds: GroundItem[];
   doodads: DoodadItem[];
-  carpets: CarpetItem[];
   walls: WallItem[];
+  tilesets: TilesetItem[];
 }
