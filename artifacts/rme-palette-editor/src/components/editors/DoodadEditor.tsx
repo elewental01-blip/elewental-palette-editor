@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useEditor } from "@/lib/context";
-import { DoodadItem, DoodadElementType, CarpetAlignDirection, CarpetAlignData } from "@/lib/types";
+import { DoodadItem, DoodadElementType } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { CardContent } from "@/components/ui/card";
 import { Plus, Trash2, AlertCircle, ArrowUp, ArrowDown, Pencil, X, Repeat2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { generateTilesetSnippet } from "@/lib/xml-generators";
+import { TilesetRegistration } from "./TilesetRegistration";
 
 // ── Composite tile visual grid ───────────────────────────────────────────────
 
@@ -110,105 +109,6 @@ function CompositeTileGrid({ tiles, onChange }: { tiles: CompositeTile[]; onChan
   );
 }
 
-// ── Carpet direction cell (embedded in doodad) ────────────────────────────────
-
-function CarpetIcon({ dir }: { dir: CarpetAlignDirection }) {
-  const g = "hsl(215 20% 30%)"; const a = "hsl(45 90% 55%)";
-  const icons: Record<CarpetAlignDirection, JSX.Element> = {
-    n:      (<><rect width="24" height="17" fill={g}/><rect y="17" width="24" height="7" fill={a}/></>),
-    s:      (<><rect width="24" height="7" fill={a}/><rect y="7" width="24" height="17" fill={g}/></>),
-    e:      (<><rect width="17" height="24" fill={g}/><rect x="17" width="7" height="24" fill={a}/></>),
-    w:      (<><rect width="7" height="24" fill={a}/><rect x="7" width="17" height="24" fill={g}/></>),
-    cnw:    (<><rect width="24" height="24" fill={g}/><rect x="0" y="0" width="9" height="9" fill={a}/></>),
-    cne:    (<><rect width="24" height="24" fill={g}/><rect x="15" y="0" width="9" height="9" fill={a}/></>),
-    csw:    (<><rect width="24" height="24" fill={g}/><rect x="0" y="15" width="9" height="9" fill={a}/></>),
-    cse:    (<><rect width="24" height="24" fill={g}/><rect x="15" y="15" width="9" height="9" fill={a}/></>),
-    dnw:    (<><rect width="24" height="24" fill={g}/><polygon points="0,0 0,14 14,0" fill={a}/></>),
-    dne:    (<><rect width="24" height="24" fill={g}/><polygon points="24,0 10,0 24,14" fill={a}/></>),
-    dsw:    (<><rect width="24" height="24" fill={g}/><polygon points="0,24 14,24 0,10" fill={a}/></>),
-    dse:    (<><rect width="24" height="24" fill={g}/><polygon points="24,24 24,10 10,24" fill={a}/></>),
-    center: (<><rect width="24" height="24" fill={g}/><rect x="6" y="6" width="12" height="12" fill={a}/></>),
-  };
-  return (
-    <svg viewBox="0 0 24 24" width={22} height={22} style={{ display: "block", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
-      {icons[dir]}
-    </svg>
-  );
-}
-
-type CarpetCellDef = { dir: CarpetAlignDirection; label: string } | { dir: null; label: string };
-
-const CARPET_LAYOUT: CarpetCellDef[] = [
-  { dir: "cse", label: "CSE" }, { dir: null, label: "" }, { dir: "n",      label: "N"   }, { dir: null, label: "" }, { dir: "csw",    label: "CSW" },
-  { dir: "dse", label: "DSE" }, { dir: null, label: "" }, { dir: null,     label: "" },    { dir: null, label: "" }, { dir: "dsw",    label: "DSW" },
-  { dir: null,  label: "" },    { dir: "e",  label: "E" }, { dir: "center", label: "CTR" }, { dir: "w",  label: "W" }, { dir: null,    label: "" },
-  { dir: "dne", label: "DNE" }, { dir: null, label: "" }, { dir: null,     label: "" },    { dir: null, label: "" }, { dir: "dnw",    label: "DNW" },
-  { dir: "cne", label: "CNE" }, { dir: null, label: "" }, { dir: "s",      label: "S"   }, { dir: null, label: "" }, { dir: "cnw",    label: "CNW" },
-];
-
-function CarpetGrid({ carpets, onChange }: { carpets: Partial<Record<CarpetAlignDirection, CarpetAlignData>>; onChange: (c: Partial<Record<CarpetAlignDirection, CarpetAlignData>>) => void; }) {
-  const setDir = (dir: CarpetAlignDirection, val: CarpetAlignData | undefined) => {
-    const next = { ...carpets };
-    if (val === undefined) delete next[dir]; else next[dir] = val;
-    onChange(next);
-  };
-
-  return (
-    <div className="bg-sidebar rounded-lg border border-sidebar-border p-3">
-      <div className="grid grid-cols-5 gap-1.5">
-        {CARPET_LAYOUT.map((cell, i) => {
-          if (cell.dir === null) return <div key={`e-${i}`} />;
-          const dir = cell.dir;
-          const data = carpets[dir];
-          const hasData = !!data;
-          const isSingle = data?.type === "single";
-          const isMulti  = data?.type === "multi";
-
-          return (
-            <div key={dir} className={["flex flex-col rounded border overflow-hidden transition-colors text-[10px]", hasData ? "border-primary/40 bg-card" : "border-border/20 bg-card/40"].join(" ")}>
-              <div className="flex items-center gap-1 px-1.5 py-1 border-b border-border/20 bg-muted/20">
-                <CarpetIcon dir={dir} />
-                <span className="font-mono font-bold text-foreground/70 flex-1">{cell.label}</span>
-                {hasData && (
-                  <div className="flex gap-0.5">
-                    <button type="button" onClick={() => setDir(dir, { type: "single", id: 0 })} className={["px-1 py-0.5 rounded border transition-colors", isSingle ? "bg-primary/20 border-primary/40 text-primary" : "border-border/20 text-muted-foreground"].join(" ")}>S</button>
-                    <button type="button" onClick={() => setDir(dir, { type: "multi", items: [] })} className={["px-1 py-0.5 rounded border transition-colors", isMulti ? "bg-primary/20 border-primary/40 text-primary" : "border-border/20 text-muted-foreground"].join(" ")}>M</button>
-                    <button type="button" onClick={() => setDir(dir, undefined)} className="px-0.5 py-0.5 rounded border border-border/20 text-muted-foreground hover:text-destructive"><X className="w-2.5 h-2.5" /></button>
-                  </div>
-                )}
-              </div>
-              {!hasData ? (
-                <button type="button" onClick={() => setDir(dir, { type: "single", id: 0 })} className="flex items-center justify-center gap-0.5 px-1 py-2 text-muted-foreground/40 hover:text-primary hover:bg-muted/20 transition-colors">
-                  <Plus className="w-2.5 h-2.5" /> add
-                </button>
-              ) : isSingle ? (
-                <div className="px-1.5 py-1.5">
-                  <Input type="number" placeholder="ID" value={(data as any).id || ""} onChange={(e) => setDir(dir, { type: "single", id: parseInt(e.target.value) || 0 })} className="h-5 text-[10px] px-1" />
-                </div>
-              ) : (
-                <div className="px-1.5 py-1 space-y-1">
-                  {(data as any).items.map((item: any, idx: number) => (
-                    <div key={idx} className="flex gap-0.5 items-center">
-                      <Input type="number" placeholder="ID" value={item.id || ""} onChange={(e) => { const items = [...(data as any).items]; items[idx] = { ...item, id: parseInt(e.target.value) || 0 }; setDir(dir, { type: "multi", items }); }} className="h-4 text-[9px] px-0.5 w-12 min-w-0" />
-                      <Input type="number" placeholder="%" value={item.chance || ""} onChange={(e) => { const items = [...(data as any).items]; items[idx] = { ...item, chance: parseInt(e.target.value) || 0 }; setDir(dir, { type: "multi", items }); }} className="h-4 text-[9px] px-0.5 w-8 min-w-0" />
-                      <button type="button" onClick={() => { const items = (data as any).items.filter((_: any, i: number) => i !== idx); setDir(dir, { type: "multi", items }); }} className="text-muted-foreground hover:text-destructive"><X className="w-2.5 h-2.5" /></button>
-                    </div>
-                  ))}
-                  <button type="button" onClick={() => { const items = [...(data as any).items, { id: 0, chance: 10 }]; setDir(dir, { type: "multi", items }); }} className="flex items-center gap-0.5 text-[9px] text-primary hover:underline mt-0.5"><Plus className="w-2.5 h-2.5" /> item</button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="mt-3 flex items-center gap-4 justify-center text-[10px] text-muted-foreground">
-        <span><strong className="text-foreground/60">S</strong> = single ID</span>
-        <span><strong className="text-foreground/60">M</strong> = multiple with chance</span>
-      </div>
-    </div>
-  );
-}
-
 // ── Element header ─────────────────────────────────────────────────────────────
 
 function ElementHeader({ el, idx, total, onMove, onRemove, onToggleAlternate }: {
@@ -223,25 +123,22 @@ function ElementHeader({ el, idx, total, onMove, onRemove, onToggleAlternate }: 
     simple:    "text-blue-400",
     composite: "text-amber-400",
     alternate: "text-purple-400",
-    carpet:    "text-rose-400",
   };
   const TYPE_BG: Record<string, string> = {
     simple:    "bg-blue-500/8 border-blue-500/20",
     composite: "bg-amber-500/8 border-amber-500/20",
     alternate: "bg-purple-500/8 border-purple-500/20",
-    carpet:    "bg-rose-500/8 border-rose-500/20",
   };
 
   const hasAlt = el.type === "simple" || el.type === "composite";
   const isAlt  = hasAlt && (el as any).alternate === true;
 
   return (
-    <div className={`px-3 py-2 flex items-center justify-between border-b border-border/20 ${TYPE_BG[el.type]}`}>
+    <div className={`px-3 py-2 flex items-center justify-between border-b border-border/20 ${TYPE_BG[el.type] ?? ""}`}>
       <div className="flex items-center gap-2 flex-wrap">
-        <span className={`text-xs font-mono font-bold uppercase ${TYPE_COLOR[el.type]}`}>{el.type}</span>
+        <span className={`text-xs font-mono font-bold uppercase ${TYPE_COLOR[el.type] ?? "text-muted-foreground"}`}>{el.type}</span>
         {el.type === "composite" && <span className="text-[10px] text-muted-foreground">{el.tiles.length} tiles</span>}
         {el.type === "alternate" && <span className="text-[10px] text-muted-foreground">{el.items.length} items</span>}
-        {el.type === "carpet" && <span className="text-[10px] text-muted-foreground">{Object.keys(el.carpets).length} dirs</span>}
         {hasAlt && (
           <button type="button" onClick={onToggleAlternate}
             title={isAlt ? "Remove <alternate> wrapper" : "Wrap in <alternate>"}
@@ -268,7 +165,6 @@ function ElementHeader({ el, idx, total, onMove, onRemove, onToggleAlternate }: 
 
 export function DoodadEditor() {
   const { state, dispatch } = useEditor();
-  const { toast } = useToast();
   const activeItem = state.doodads.find((d) => d.id === state.activeItemId);
 
   if (!activeItem) {
@@ -282,12 +178,10 @@ export function DoodadEditor() {
   const updateField    = (field: keyof DoodadItem, value: any) => dispatch({ type: "UPDATE_DOODAD", id: activeItem.id, doodad: { ...activeItem, [field]: value } });
   const updateElements = (elements: DoodadElementType[]) => updateField("elements", elements);
 
-  const addElement = (type: "simple" | "composite" | "alternate" | "carpet") => {
+  const addElement = (type: "simple" | "composite") => {
     const n = [...activeItem.elements];
     if (type === "simple")    n.push({ type: "simple", id: 0, chance: 10 });
-    else if (type === "composite") n.push({ type: "composite", chance: 10, tiles: [{ x: 0, y: 0, itemId: 0 }, { x: 1, y: 0, itemId: 0 }] });
-    else if (type === "alternate") n.push({ type: "alternate", items: [] });
-    else                      n.push({ type: "carpet", carpets: {} });
+    else                      n.push({ type: "composite", chance: 10, tiles: [{ x: 0, y: 0, itemId: 0 }, { x: 1, y: 0, itemId: 0 }] });
     updateElements(n);
   };
 
@@ -305,24 +199,10 @@ export function DoodadEditor() {
       updateElement(i, { ...el, alternate: !el.alternate } as DoodadElementType);
   };
 
-  const isCarpetDoodad = activeItem.elements.some((el) => el.type === "carpet");
-
-  const copyTilesetXml = async () => {
-    const xml = generateTilesetSnippet(activeItem.name, "doodad");
-    try {
-      await navigator.clipboard.writeText(xml);
-      toast({ title: "Copied!", description: "Tileset registration XML copied to clipboard." });
-    } catch {
-      toast({ title: "Error", description: "Could not copy to clipboard.", variant: "destructive" });
-    }
-  };
-
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-200">
       <div>
-        <h2 className="text-2xl font-bold mb-4">
-          {isCarpetDoodad ? "Carpet Configuration" : "Doodad Configuration"}
-        </h2>
+        <h2 className="text-2xl font-bold mb-4">Doodad Configuration</h2>
         {!activeItem.name && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
@@ -343,43 +223,33 @@ export function DoodadEditor() {
               onChange={(e) => updateField("serverLookId", parseInt(e.target.value) || undefined)}
               data-testid="input-doodad-lookid" />
           </div>
-          {!isCarpetDoodad && (
-            <div className="space-y-2">
-              <Label htmlFor="doodad-thickness">Thickness</Label>
-              <Input id="doodad-thickness" placeholder="e.g. 15/100" value={activeItem.thickness || ""}
-                onChange={(e) => updateField("thickness", e.target.value)}
-                data-testid="input-doodad-thickness" />
-            </div>
-          )}
-          {!isCarpetDoodad && (
-            <div className="flex items-center space-x-2">
-              <Checkbox id="doodad-draggable" checked={activeItem.draggable}
-                onCheckedChange={(c) => updateField("draggable", !!c)} />
-              <Label htmlFor="doodad-draggable" className="font-normal cursor-pointer">Draggable</Label>
-            </div>
-          )}
-          {!isCarpetDoodad && (
-            <div className="flex items-center space-x-2">
-              <Checkbox id="doodad-onblocking" checked={activeItem.onBlocking}
-                onCheckedChange={(c) => updateField("onBlocking", !!c)} />
-              <Label htmlFor="doodad-onblocking" className="font-normal cursor-pointer">On Blocking</Label>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="doodad-thickness">Thickness</Label>
+            <Input id="doodad-thickness" placeholder="e.g. 15/100" value={activeItem.thickness || ""}
+              onChange={(e) => updateField("thickness", e.target.value)}
+              data-testid="input-doodad-thickness" />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="doodad-draggable" checked={activeItem.draggable}
+              onCheckedChange={(c) => updateField("draggable", !!c)} />
+            <Label htmlFor="doodad-draggable" className="font-normal cursor-pointer">Draggable</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="doodad-onblocking" checked={activeItem.onBlocking}
+              onCheckedChange={(c) => updateField("onBlocking", !!c)} />
+            <Label htmlFor="doodad-onblocking" className="font-normal cursor-pointer">On Blocking</Label>
+          </div>
         </div>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Elements</h3>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-2">
             <Button size="sm" variant="outline" className="text-blue-400 border-blue-500/40 hover:bg-blue-500/10"
               onClick={() => addElement("simple")} data-testid="button-add-simple">+ Simple</Button>
             <Button size="sm" variant="outline" className="text-amber-400 border-amber-500/40 hover:bg-amber-500/10"
               onClick={() => addElement("composite")} data-testid="button-add-composite">+ Composite</Button>
-            <Button size="sm" variant="outline" className="text-purple-400 border-purple-500/40 hover:bg-purple-500/10"
-              onClick={() => addElement("alternate")} data-testid="button-add-alternate">+ Alternate</Button>
-            <Button size="sm" variant="outline" className="text-rose-400 border-rose-500/40 hover:bg-rose-500/10"
-              onClick={() => addElement("carpet")} data-testid="button-add-carpet">+ Carpet</Button>
           </div>
         </div>
 
@@ -448,38 +318,19 @@ export function DoodadEditor() {
                     </div>
                   </div>
                 )}
-                {el.type === "carpet" && (
-                  <div>
-                    <Label className="text-xs font-bold mb-3 block">Carpet Direction Grid</Label>
-                    <CarpetGrid
-                      carpets={el.carpets}
-                      onChange={(newCarpets) => updateElement(idx, { ...el, carpets: newCarpets })}
-                    />
-                  </div>
-                )}
               </CardContent>
             </div>
           ))}
 
           {activeItem.elements.length === 0 && (
             <p className="text-sm text-muted-foreground py-8 text-center border border-dashed rounded-lg">
-              No elements. Use the buttons above to add Simple Items, Composites, Alternates, or Carpets.
+              No elements. Use the buttons above to add Simple Items or Composites.
             </p>
           )}
         </div>
       </div>
 
-      {/* Tileset registration */}
-      {activeItem.name && (
-        <div className="pt-4 border-t border-border/40">
-          <Button variant="outline" onClick={copyTilesetXml} className="gap-2">
-            Copy tilesets.xml Registration
-          </Button>
-          <p className="text-xs text-muted-foreground mt-2">
-            Copies a <code className="font-mono">&lt;tileset&gt;</code> snippet for <code className="font-mono">{activeItem.name}</code> to paste into <code className="font-mono">tilesets.xml</code>.
-          </p>
-        </div>
-      )}
+      <TilesetRegistration brushName={activeItem.name} defaultSectionType="doodad" />
     </div>
   );
 }

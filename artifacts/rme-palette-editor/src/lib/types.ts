@@ -11,14 +11,14 @@ export interface BorderItem {
 export interface GroundItem {
   id: string;
   name: string;
-  serverLookId: number;
-  zOrder: number;
+  serverLookId?: number;
+  zOrder?: number;
   items: { id: number; chance: number; }[];
   borders: { align: "outer" | "inner"; id: number; }[];
   friends: string[];
 }
 
-// ── Carpet direction types (used inside DoodadElementType) ─────────────────────
+// ── Carpet types ───────────────────────────────────────────────────────────────
 
 export type CarpetAlignDirection =
   | "n" | "s" | "e" | "w"
@@ -30,13 +30,19 @@ export type CarpetAlignData =
   | { type: "single"; id: number }
   | { type: "multi"; items: { id: number; chance: number }[] };
 
+export interface CarpetItem {
+  id: string;
+  name: string;
+  serverLookId?: number;
+  carpets: Partial<Record<CarpetAlignDirection, CarpetAlignData>>;
+}
+
 // ── Doodad element types ───────────────────────────────────────────────────────
 
 export type DoodadElementType =
   | { type: "simple"; id: number; chance: number; alternate?: boolean; }
   | { type: "composite"; chance: number; tiles: { x: number; y: number; itemId: number }[]; alternate?: boolean; }
-  | { type: "alternate"; items: { id: number; chance: number; }[]; }
-  | { type: "carpet"; carpets: Partial<Record<CarpetAlignDirection, CarpetAlignData>>; };
+  | { type: "alternate"; items: { id: number; chance: number; }[]; };
 
 export interface DoodadItem {
   id: string;
@@ -103,6 +109,7 @@ export interface EditorState {
   borders: BorderItem[];
   grounds: GroundItem[];
   doodads: DoodadItem[];
+  carpets: CarpetItem[];
   walls: WallItem[];
   tilesets: TilesetItem[];
 }

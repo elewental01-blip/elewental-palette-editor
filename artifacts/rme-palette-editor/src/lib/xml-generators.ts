@@ -1,4 +1,4 @@
-import { BorderItem, GroundItem, DoodadItem, WallItem, TilesetItem, CarpetAlignDirection } from "./types";
+import { BorderItem, GroundItem, DoodadItem, CarpetItem, WallItem, TilesetItem, CarpetAlignDirection } from "./types";
 
 const CARPET_DIR_ORDER: CarpetAlignDirection[] = [
   "n", "e", "s", "w",
@@ -31,13 +31,12 @@ export function generateGroundsXml(grounds: GroundItem[]): string {
     if (!ground.name) continue;
     let attrs = `name="${ground.name}" type="ground"`;
     attrs += ` server_lookid="${ground.serverLookId ?? 0}"`;
-    attrs += ` z-order="${ground.zOrder ?? 0}"`;
+    if (ground.zOrder !== undefined) attrs += ` z-order="${ground.zOrder}"`;
     xml += `<brush ${attrs}>\n`;
     for (const item of ground.items)
       xml += `  <item id="${item.id}" chance="${item.chance}"/>\n`;
-    for (const border of ground.borders) {
+    for (const border of ground.borders)
       xml += `  <border align="${border.align}" id="${border.id}"/>\n`;
-    }
     for (const friend of ground.friends)
       xml += `  <friend name="${friend}"/>\n`;
     xml += `</brush>\n`;
@@ -49,28 +48,6 @@ export function generateDoodadsXml(doodads: DoodadItem[]): string {
   let xml = "";
   for (const doodad of doodads) {
     if (!doodad.name) continue;
-
-    const carpetEl = doodad.elements.find((el) => el.type === "carpet");
-    if (carpetEl && carpetEl.type === "carpet") {
-      let attrs = `name="${doodad.name}" type="carpet"`;
-      if (doodad.serverLookId) attrs += ` server_lookid="${doodad.serverLookId}"`;
-      xml += `<brush ${attrs}>\n`;
-      for (const dir of CARPET_DIR_ORDER) {
-        const data = carpetEl.carpets[dir];
-        if (!data) continue;
-        if (data.type === "single" && data.id) {
-          xml += `  <carpet align="${dir}" id="${data.id}"/>\n`;
-        } else if (data.type === "multi" && data.items.length > 0) {
-          xml += `  <carpet align="${dir}">\n`;
-          for (const item of data.items)
-            xml += `    <item chance="${item.chance}" id="${item.id}"/>\n`;
-          xml += `  </carpet>\n`;
-        }
-      }
-      xml += `</brush>\n`;
-      continue;
-    }
-
     let attrs = `name="${doodad.name}" type="doodad"`;
     if (doodad.serverLookId)             attrs += ` server_lookid="${doodad.serverLookId}"`;
     if (doodad.draggable !== undefined)  attrs += ` draggable="${doodad.draggable}"`;
@@ -104,6 +81,30 @@ export function generateDoodadsXml(doodads: DoodadItem[]): string {
       }
     }
 
+    xml += `</brush>\n`;
+  }
+  return xml.trimEnd();
+}
+
+export function generateCarpetsXml(carpets: CarpetItem[]): string {
+  let xml = "";
+  for (const carpet of carpets) {
+    if (!carpet.name) continue;
+    let attrs = `name="${carpet.name}" type="carpet"`;
+    if (carpet.serverLookId) attrs += ` server_lookid="${carpet.serverLookId}"`;
+    xml += `<brush ${attrs}>\n`;
+    for (const dir of CARPET_DIR_ORDER) {
+      const data = carpet.carpets[dir];
+      if (!data) continue;
+      if (data.type === "single" && data.id) {
+        xml += `  <carpet align="${dir}" id="${data.id}"/>\n`;
+      } else if (data.type === "multi" && data.items.length > 0) {
+        xml += `  <carpet align="${dir}">\n`;
+        for (const item of data.items)
+          xml += `    <item chance="${item.chance}" id="${item.id}"/>\n`;
+        xml += `  </carpet>\n`;
+      }
+    }
     xml += `</brush>\n`;
   }
   return xml.trimEnd();
@@ -176,8 +177,4 @@ export function generateTilesetsXml(tilesets: TilesetItem[]): string {
     xml += `</tileset>\n`;
   }
   return xml.trimEnd();
-}
-
-export function generateTilesetSnippet(name: string, sectionType: "terrain" | "doodad" | "raw"): string {
-  return `<tileset name="${name}">\n\t<${sectionType}>\n\t\t<brush name="${name}"/>\n\t</${sectionType}>\n</tileset>`;
 }

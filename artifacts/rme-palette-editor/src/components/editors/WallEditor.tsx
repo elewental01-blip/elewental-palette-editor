@@ -9,12 +9,10 @@ import { Plus, Trash2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { generateTilesetSnippet } from "@/lib/xml-generators";
+import { TilesetRegistration } from "./TilesetRegistration";
 
 export function WallEditor() {
   const { state, dispatch } = useEditor();
-  const { toast } = useToast();
   const activeItem = state.walls.find((w) => w.id === state.activeItemId);
 
   if (!activeItem) {
@@ -250,25 +248,7 @@ export function WallEditor() {
         </div>
       </div>
 
-      {/* Tileset registration */}
-      {activeItem.name && (
-        <div className="pt-4 border-t border-border/40">
-          <Button variant="outline" onClick={async () => {
-            const xml = generateTilesetSnippet(activeItem.name!, "doodad");
-            try {
-              await navigator.clipboard.writeText(xml);
-              toast({ title: "Copied!", description: "Tileset registration XML copied to clipboard." });
-            } catch {
-              toast({ title: "Error", description: "Could not copy to clipboard.", variant: "destructive" });
-            }
-          }} className="gap-2">
-            Copy tilesets.xml Registration
-          </Button>
-          <p className="text-xs text-muted-foreground mt-2">
-            Copies a <code className="font-mono">&lt;tileset&gt;</code> snippet for <code className="font-mono">{activeItem.name}</code> to paste into <code className="font-mono">tilesets.xml</code>.
-          </p>
-        </div>
-      )}
+      <TilesetRegistration brushName={activeItem.name || ""} defaultSectionType="doodad" />
     </div>
   );
 }

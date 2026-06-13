@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useEditor } from "@/lib/context";
 import {
   generateBordersXml, generateGroundsXml,
-  generateDoodadsXml, generateWallsXml, generateTilesetsXml,
+  generateDoodadsXml, generateCarpetsXml, generateWallsXml, generateTilesetsXml,
 } from "@/lib/xml-generators";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +18,11 @@ export function XmlPreview() {
     let xml = "";
     if      (state.activeCategory === "borders")  xml = generateBordersXml(state.borders);
     else if (state.activeCategory === "grounds")  xml = generateGroundsXml(state.grounds);
-    else if (state.activeCategory === "doodads")  xml = generateDoodadsXml(state.doodads);
+    else if (state.activeCategory === "doodads") {
+      const doodadsXml = generateDoodadsXml(state.doodads);
+      const carpetsXml = generateCarpetsXml(state.carpets);
+      xml = [doodadsXml, carpetsXml].filter(Boolean).join("\n\n");
+    }
     else if (state.activeCategory === "walls")    xml = generateWallsXml(state.walls);
     else if (state.activeCategory === "tilesets") xml = generateTilesetsXml(state.tilesets ?? []);
     setXmlContent(xml);

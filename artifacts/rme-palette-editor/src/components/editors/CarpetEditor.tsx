@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Plus, X, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { TilesetRegistration } from "./TilesetRegistration";
 
 // ── Reuse border SVG icons for all shared directions ─────────────────────────
 
@@ -212,11 +213,11 @@ export function CarpetEditor() {
     | { type: "empty" };
 
   const layout: CellDef[] = [
-    { type: "dir", dir: "cse",    label: "CSE" },    { type: "empty" }, { type: "dir", dir: "n",      label: "N" },      { type: "empty" }, { type: "dir", dir: "csw",    label: "CSW" },
+    { type: "dir", dir: "cse",    label: "CSE" },    { type: "empty" }, { type: "dir", dir: "n",      label: "S" },      { type: "empty" }, { type: "dir", dir: "csw",    label: "CSW" },
     { type: "dir", dir: "dse",    label: "DSE" },    { type: "empty" }, { type: "empty" },                                { type: "empty" }, { type: "dir", dir: "dsw",    label: "DSW" },
     { type: "empty" },                               { type: "dir", dir: "e",      label: "E" },      { type: "dir", dir: "center", label: "CTR" }, { type: "dir", dir: "w",      label: "W" }, { type: "empty" },
     { type: "dir", dir: "dne",    label: "DNE" },    { type: "empty" }, { type: "empty" },                                { type: "empty" }, { type: "dir", dir: "dnw",    label: "DNW" },
-    { type: "dir", dir: "cne",    label: "CNE" },    { type: "empty" }, { type: "dir", dir: "s",      label: "S" },      { type: "empty" }, { type: "dir", dir: "cnw",    label: "CNW" },
+    { type: "dir", dir: "cne",    label: "CNE" },    { type: "empty" }, { type: "dir", dir: "s",      label: "N" },      { type: "empty" }, { type: "dir", dir: "cnw",    label: "CNW" },
   ];
 
   const activeCount = Object.keys(activeItem.carpets).length;
@@ -293,8 +294,8 @@ export function CarpetEditor() {
 
           {/* Legend */}
           <div className="mt-5 flex items-center gap-5 justify-center text-[11px] text-muted-foreground">
-            <span><strong className="text-foreground/60">S</strong> = single ID (sem chance)</span>
-            <span><strong className="text-foreground/60">M</strong> = múltiplos itens com chance</span>
+            <span><strong className="text-foreground/60">S</strong> = single ID</span>
+            <span><strong className="text-foreground/60">M</strong> = multiple items with chance</span>
             <div className="flex items-center gap-1.5">
               <svg viewBox="0 0 14 14" width={14} height={14}><rect width="14" height="14" fill="hsl(215 20% 30%)"/><rect x="3" y="3" width="8" height="8" fill="hsl(45 90% 55%)"/></svg>
               center
@@ -302,6 +303,8 @@ export function CarpetEditor() {
           </div>
         </div>
       </div>
+
+      <TilesetRegistration brushName={activeItem.name} defaultSectionType="doodad" />
     </div>
   );
 }

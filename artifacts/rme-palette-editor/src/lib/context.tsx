@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, ReactNode } from "react";
-import { BorderItem, GroundItem, DoodadItem, WallItem, TilesetItem } from "./types";
+import { BorderItem, GroundItem, DoodadItem, CarpetItem, WallItem, TilesetItem } from "./types";
 
 export type Category = "borders" | "grounds" | "doodads" | "walls" | "tilesets";
 
@@ -7,6 +7,7 @@ type State = {
   borders: BorderItem[];
   grounds: GroundItem[];
   doodads: DoodadItem[];
+  carpets: CarpetItem[];
   walls: WallItem[];
   tilesets: TilesetItem[];
   activeCategory: Category;
@@ -25,6 +26,9 @@ type Action =
   | { type: "ADD_DOODAD"; doodad: DoodadItem }
   | { type: "UPDATE_DOODAD"; id: string; doodad: DoodadItem }
   | { type: "DELETE_DOODAD"; id: string }
+  | { type: "ADD_CARPET"; carpet: CarpetItem }
+  | { type: "UPDATE_CARPET"; id: string; carpet: CarpetItem }
+  | { type: "DELETE_CARPET"; id: string }
   | { type: "ADD_WALL"; wall: WallItem }
   | { type: "UPDATE_WALL"; id: string; wall: WallItem }
   | { type: "DELETE_WALL"; id: string }
@@ -37,6 +41,7 @@ const initialState: State = {
   borders:  [],
   grounds:  [],
   doodads:  [],
+  carpets:  [],
   walls:    [],
   tilesets: [],
   activeCategory: "borders",
@@ -70,6 +75,13 @@ function reducer(state: State, action: Action): State {
       return { ...state, doodads: state.doodads.map((d) => (d.id === action.id ? action.doodad : d)) };
     case "DELETE_DOODAD":
       return { ...state, doodads: state.doodads.filter((d) => d.id !== action.id), activeItemId: state.activeItemId === action.id ? null : state.activeItemId };
+
+    case "ADD_CARPET":
+      return { ...state, carpets: [...state.carpets, action.carpet], activeItemId: action.carpet.id };
+    case "UPDATE_CARPET":
+      return { ...state, carpets: state.carpets.map((c) => (c.id === action.id ? action.carpet : c)) };
+    case "DELETE_CARPET":
+      return { ...state, carpets: state.carpets.filter((c) => c.id !== action.id), activeItemId: state.activeItemId === action.id ? null : state.activeItemId };
 
     case "ADD_WALL":
       return { ...state, walls: [...state.walls, action.wall], activeItemId: action.wall.id };

@@ -7,12 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Plus, Trash2, AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
-import { generateTilesetSnippet } from "@/lib/xml-generators";
+import { TilesetRegistration } from "./TilesetRegistration";
 
 export function GroundEditor() {
   const { state, dispatch } = useEditor();
-  const { toast } = useToast();
   const activeItem = state.grounds.find((g) => g.id === state.activeItemId);
 
   if (!activeItem) {
@@ -45,29 +43,15 @@ export function GroundEditor() {
     const n = [...activeItem.friends]; n[i] = value; updateField("friends", n);
   };
 
-  const copyTilesetXml = async () => {
-    const xml = generateTilesetSnippet(activeItem.name, "terrain");
-    try {
-      await navigator.clipboard.writeText(xml);
-      toast({ title: "Copied!", description: "Tileset registration XML copied to clipboard." });
-    } catch {
-      toast({ title: "Error", description: "Could not copy to clipboard.", variant: "destructive" });
-    }
-  };
-
-  const isValid = !!activeItem.name && !!activeItem.serverLookId && !!activeItem.zOrder;
-
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in zoom-in-95 duration-200">
       <div>
         <h2 className="text-2xl font-bold mb-4">Ground Configuration</h2>
 
-        {(!activeItem.name || !activeItem.serverLookId || !activeItem.zOrder) && (
+        {!activeItem.name && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              {!activeItem.name ? "Brush name is required." : !activeItem.serverLookId ? "Server LookID is required." : "Z-Order is required."}
-            </AlertDescription>
+            <AlertDescription>Brush name is required.</AlertDescription>
           </Alert>
         )}
 
@@ -82,23 +66,23 @@ export function GroundEditor() {
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ground-lookid">Server LookID *</Label>
+            <Label htmlFor="ground-lookid">Server LookID</Label>
             <Input
               id="ground-lookid"
               type="number"
-              value={activeItem.serverLookId || ""}
-              onChange={(e) => updateField("serverLookId", parseInt(e.target.value) || 0)}
-              className={!activeItem.serverLookId ? "border-destructive focus-visible:ring-destructive" : ""}
+              placeholder="0"
+              value={activeItem.serverLookId !== undefined ? activeItem.serverLookId : ""}
+              onChange={(e) => updateField("serverLookId", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="ground-zorder">Z-Order *</Label>
+            <Label htmlFor="ground-zorder">Z-Order</Label>
             <Input
               id="ground-zorder"
               type="number"
-              value={activeItem.zOrder || ""}
-              onChange={(e) => updateField("zOrder", parseInt(e.target.value) || 0)}
-              className={!activeItem.zOrder ? "border-destructive focus-visible:ring-destructive" : ""}
+              placeholder="(omitted if empty)"
+              value={activeItem.zOrder !== undefined ? activeItem.zOrder : ""}
+              onChange={(e) => updateField("zOrder", e.target.value === "" ? undefined : parseInt(e.target.value) || 0)}
             />
           </div>
         </div>
@@ -144,7 +128,7 @@ export function GroundEditor() {
               <Card key={idx} className="p-2">
                 <div className="flex items-center gap-2">
                   <div className="flex-1">
-                    <Input placeholder="Friend brush name..." value={friend} onChange={(e) => updateFriend(idx, e.target.value)} className="h-8 text-sm" />
+                    <Input placeholder="Friend brush name…" value={friend} onChange={(e) => updateFriend(idx, e.target.value)} className="h-8 text-sm" />
                   </div>
                   <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive shrink-0" onClick={() => removeFriend(idx)}>
                     <Trash2 className="w-4 h-4" />
@@ -191,17 +175,7 @@ export function GroundEditor() {
         </div>
       </div>
 
-      {/* Tileset registration */}
-      {isValid && (
-        <div className="pt-4 border-t border-border/40">
-          <Button variant="outline" onClick={copyTilesetXml} className="gap-2">
-            Copy tilesets.xml Registration
-          </Button>
-          <p className="text-xs text-muted-foreground mt-2">
-            Copies a <code className="font-mono">&lt;tileset&gt;</code> snippet for <code className="font-mono">{activeItem.name}</code> to paste into <code className="font-mono">tilesets.xml</code>.
-          </p>
-        </div>
-      )}
+      <TilesetRegistration brushName={activeItem.name} defaultSectionType="terrain" />
     </div>
   );
 }
