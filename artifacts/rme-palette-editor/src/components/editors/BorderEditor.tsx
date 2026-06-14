@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, AlertCircle } from "lucide-react";
+import { Plus, X, CircleAlert as AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // ── SVG border direction icons ────────────────────────────────────────────────
@@ -13,7 +13,7 @@ function BorderIcon({ dir }: { dir: BorderDirection }) {
   const g = "hsl(215 20% 30%)";
   const a = "hsl(45 90% 55%)";
 
-  const icons: Record<BorderDirection, JSX.Element> = {
+  const icons: Record<BorderDirection, React.ReactElement> = {
     // N border = tile at the NORTH edge → accent at BOTTOM
     n: (<><rect width="24" height="17" fill={g} /><rect y="17" width="24" height="7" fill={a} /></>),
     // S border = tile at the SOUTH edge → accent at TOP

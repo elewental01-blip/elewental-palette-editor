@@ -3,7 +3,7 @@ import { CarpetItem, CarpetAlignDirection, CarpetAlignData } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Plus, X, AlertCircle } from "lucide-react";
+import { Plus, X, CircleAlert as AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { TilesetRegistration } from "./TilesetRegistration";
 
@@ -13,7 +13,7 @@ function CarpetIcon({ dir }: { dir: CarpetAlignDirection }) {
   const g = "hsl(215 20% 30%)";
   const a = "hsl(45 90% 55%)";
 
-  const icons: Record<CarpetAlignDirection, JSX.Element> = {
+  const icons: Record<CarpetAlignDirection, React.ReactElement> = {
     n:      (<><rect width="24" height="17" fill={g}/><rect y="17" width="24" height="7" fill={a}/></>),
     s:      (<><rect width="24" height="7" fill={a}/><rect y="7" width="24" height="17" fill={g}/></>),
     e:      (<><rect width="17" height="24" fill={g}/><rect x="17" width="7" height="24" fill={a}/></>),
